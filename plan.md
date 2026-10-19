@@ -26,6 +26,7 @@ Test each result before continuing, including related behavior that already work
 - [ ] 2. Static composite per `spec.md` checkpoint 1. Verify: screenshots at 390x844, 360x640, 430x932; no scroll; objects fully visible. *Agent checked all three sizes in headless Edge: no scroll, house/coffin/pumpkins fully visible. Taller phones letterbox top and bottom, blended into sky/dirt colors. Developer to confirm by eye.*
 - [ ] 3. Credits stub and `research.md` asset log (tool, prompts, license terms). Verify: every file in `assets/art/` used is listed.
 - [ ] 4. Commit, enable GitHub Pages (confirm with Developer first). Verify: Developer opens the HTTPS URL on a physical phone.
+- [ ] 5. Rolling clouds and fog (`spec.md` checkpoint 2). *Agent verified in headless Edge: 8 animations run; frames at 0 s and 30 s differ; paused frames are byte-identical at 1.5 s and 40 s; reduced motion gives 0 animations and clouds rest in place. Not yet judged by eye in a live browser or on a phone: speeds, bob amount, and fog opacity are first guesses.*
 - Next, not yet planned in detail: start screen (Enter, reduced-motion check), Play/Pause, then ambient effects and audio one system at a time, then story 1.
 
 ## Evidence and revisions

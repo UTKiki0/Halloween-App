@@ -10,13 +10,21 @@
   <!-- The stage keeps a fixed phone aspect ratio; every layer is positioned in % of it. -->
   <main class="stage" role="img" aria-label="A cartoon haunted house at night with a vampire coffin and a pumpkin patch under a full moon">
     <!-- Layers, back to front. All art is decorative; the stage carries the description. -->
-    <img class="layer moon" src="assets/art/fx-moon.png" alt="">
-    <img class="layer cloud cloud-bank" src="assets/art/fx-cloud-bank.png" alt="">
-    <img class="layer cloud cloud-windswept" src="assets/art/fx-cloud-windswept.png" alt="">
-    <img class="layer cloud cloud-small" src="assets/art/fx-cloud-small.png" alt="">
+    <img class="layer sky" src="assets/art/bg-sky.png" alt="">
+    <img class="layer moon"src="assets/art/fx-moon.png" alt="">
+    <!-- Each cloud drifts via the `translate` property (on this wrapper) and bobs via `transform` (on the img). -->
+    <div class="layer cloud cloud-bank"><img src="assets/art/fx-cloud-bank.png" alt=""></div>
+    <div class="layer cloud cloud-windswept"><img src="assets/art/fx-cloud-windswept.png" alt=""></div>
+    <div class="layer cloud cloud-small"><img src="assets/art/fx-cloud-small.png" alt=""></div>
     <div class="layer ground"></div>
     <img class="layer scene" src="assets/art/fg-scene.png" alt="">
-    <img class="layer fog" src="assets/art/fx-fog.png" alt="">
+    <!-- Fog rolls as a strip of 4 tiles (normal, mirrored, normal, mirrored) so the joins are seamless. -->
+    <div class="layer fog fog-a">
+      <img src="assets/art/fx-fog.png" alt=""><img class="flip" src="assets/art/fx-fog.png" alt=""><img src="assets/art/fx-fog.png" alt=""><img class="flip" src="assets/art/fx-fog.png" alt="">
+    </div>
+    <div class="layer fog fog-b">
+      <img src="assets/art/fx-fog.png" alt=""><img class="flip" src="assets/art/fx-fog.png" alt=""><img src="assets/art/fx-fog.png" alt=""><img class="flip" src="assets/art/fx-fog.png" alt="">
+    </div>
 
     <!-- Reserved for later: particle/effect layer, then UI (Play/Pause lives in the bottom 15%). -->
     <div class="layer effects" id="effects"></div>

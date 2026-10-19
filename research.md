@@ -37,6 +37,7 @@ All files in `assets/art/`. TODO (Developer): record the generator tool, prompts
 
 | File | Role |
 |---|---|
+| `bg-sky.png` | starry indigo night sky, back layer (opaque, 941x1672) |
 | `fg-scene.png` | house, coffin, pumpkins (transparent PNG) |
 | `fx-fog.png` | ground fog on black, `screen` blend |
 | `fx-moon.png` | moon with halo (transparent PNG) |

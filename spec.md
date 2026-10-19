@@ -31,7 +31,7 @@ Reference the brief's fixed requirements rather than copying them. Specify your 
 
 **Layer stack, back to front** (art files in `assets/art/`; sources and credits in `research.md`):
 
-1. Sky: CSS dark indigo gradient (provisional; an image may replace it).
+1. Sky: `bg-sky.png` (starry indigo sky); the CSS dark indigo gradient on the stage remains as a fallback if the image fails to load.
 2. Moon: `fx-moon.png`, upper right, partly behind a cloud.
 3. Clouds: `fx-cloud-bank.png`, `fx-cloud-windswept.png`, `fx-cloud-small.png`, at different sizes and depths.
 4. Scene: `fg-scene.png` (house, coffin, pumpkins), anchored to the bottom, centered.
@@ -53,6 +53,13 @@ Reference the brief's fixed requirements rather than copying them. Specify your 
 - Fog and moonlight do not wash out the house, coffin, or pumpkins.
 - Works from Live Server locally and from the GitHub Pages URL.
 - Developer confirms the look in the browser preview; physical-phone check follows deployment.
+
+### Checkpoint 2: rolling clouds and fog (DRAFT, pending Developer review)
+
+- Three clouds drift left to right at different speeds (70–140 s per pass), wrap off-screen, and bob slightly (about 3% of cloud height, 6–9 s cycles). The moon stays fixed.
+- Fog is two layers sliding in opposite directions at different speeds (110 s and 160 s) and opacities. Tiles alternate normal and mirrored so joins are seamless.
+- Motion is CSS-only (`translate`/`transform`). One shared rule: the `is-paused` class on `.stage` pauses every animation (the future Play/Pause control toggles it). Under `prefers-reduced-motion`, nothing moves and clouds rest at their starting positions.
+- Checks: motion visible and continuous with no gaps or seams; paused frames identical across time; reduced motion shows zero animations.
 
 **Open (provisional or undecided)**
 

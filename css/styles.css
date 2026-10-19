@@ -4,7 +4,7 @@
 
 :root {
   --stage-ratio: 941 / 1672;
-  --sky-top: #0b0820;
+  --sky-top: #05082e;   /* matches the top edge of bg-sky.png so letterbox bars blend */
   --sky-mid: #1d1642;
   --sky-low: #3a2a63;
   --dirt: #4a3426;
@@ -45,13 +45,43 @@ body {
   -webkit-user-drag: none;
 }
 
+/* Sky image fills the stage; the stage's CSS gradient shows only if it fails to load. */
+.sky { inset: 0; width: 100%; height: 100%; }
+
 /* Moon: upper right, behind the house spire and partly behind a cloud. */
 .moon { width: 36%; left: 62%; top: 1%; }
 
-/* Clouds: different sizes/depths so they can drift at different speeds later. */
-.cloud-bank      { width: 78%; left: -14%; top: 7%;  opacity: 0.9; }
-.cloud-windswept { width: 62%; left: 52%;  top: 12%; }
-.cloud-small     { width: 34%; left: 6%;   top: 19%; opacity: 0.95; }
+/* Clouds: different sizes/depths and speeds.
+   Per cloud: --w width (fraction of stage), --p starting progress along its path (0-1),
+   --drift seconds for one full pass, --bob seconds per bob cycle.
+   The wrapper is anchored at left:0 and moved with `translate` (percent = its own width):
+   -100% is just off the left edge, 100% / --w is just off the right edge.
+   The static `translate` below is the resting position, used when motion is off. */
+.cloud {
+  --path: calc(100% / var(--w) + 100%);                  /* total travel, in own-width percent */
+  left: 0;
+  width: calc(var(--w) * 100%);
+  translate: calc(-100% + var(--p) * var(--path));
+  animation: cloud-drift var(--drift) linear infinite;
+  animation-delay: calc(var(--p) * var(--drift) * -1);   /* start part-way through the pass */
+}
+.cloud img {
+  display: block;
+  width: 100%;
+  animation: cloud-bob var(--bob) ease-in-out infinite alternate;
+}
+.cloud-bank      { --w: 0.78; --p: 0.36; --drift: 140s; --bob: 9s; top: 7%;  opacity: 0.9; }
+.cloud-windswept { --w: 0.62; --p: 0.70; --drift: 100s; --bob: 7s; top: 12%; }
+.cloud-small     { --w: 0.34; --p: 0.30; --drift: 70s;  --bob: 6s; top: 19%; opacity: 0.95; }
+
+@keyframes cloud-drift {
+  from { translate: -100% 0; }
+  to   { translate: calc(100% / var(--w)) 0; }
+}
+@keyframes cloud-bob {
+  from { transform: translateY(-3%); }
+  to   { transform: translateY(3%); }
+}
 
 /* Scene art is 94% of stage height, leaving the bottom ~15% free of key art for UI. */
 .scene {
@@ -80,13 +110,46 @@ body {
   background: linear-gradient(to bottom, transparent 0%, var(--dirt) 45%, var(--dirt-dark) 100%);
 }
 
-/* Fog: black in the PNG becomes invisible with screen blending. */
+/* Fog: black in the PNG becomes invisible with screen blending.
+   Each fog layer is a strip of 4 tiles (4 stage-widths wide); sliding it by half its
+   width (2 tiles = one full normal+mirrored period) loops seamlessly. */
 .fog {
-  inset: 0;
-  width: 100%;
+  top: 0;
+  left: 0;
+  width: 400%;
   height: 100%;
+  display: flex;
   mix-blend-mode: screen;
-  opacity: 0.5;
+  /* Fade out at the very bottom so fog doesn't end in a hard line over the dirt. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+  animation: fog-roll var(--fog-speed) linear infinite var(--fog-dir, normal);
+}
+.fog img {
+  width: 25%;
+  height: 100%;
+  flex: none;
+}
+.fog .flip { transform: scaleX(-1); }
+
+/* Two layers at different speeds, directions and opacities so the fog churns, not slides. */
+.fog-a { --fog-speed: 160s; opacity: 0.45; }
+.fog-b { --fog-speed: 110s; --fog-dir: reverse; opacity: 0.3; top: 4%; }
+
+@keyframes fog-roll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* One shared pause rule: the Play/Pause control (later) toggles .is-paused on the stage. */
+.stage.is-paused .layer,
+.stage.is-paused .layer img {
+  animation-play-state: paused;
+}
+
+/* Reduced motion: everything holds still at its resting position. */
+@media (prefers-reduced-motion: reduce) {
+  .layer, .layer img { animation: none; }
 }
 
 /* Reserved layers (empty for now). */
