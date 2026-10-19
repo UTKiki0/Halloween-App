@@ -61,6 +61,35 @@ Reference the brief's fixed requirements rather than copying them. Specify your 
 - Motion is CSS-only (`translate`/`transform`). One shared rule: the `is-paused` class on `.stage` pauses every animation (the future Play/Pause control toggles it). Under `prefers-reduced-motion`, nothing moves and clouds rest at their starting positions.
 - Checks: motion visible and continuous with no gaps or seams; paused frames identical across time; reduced motion shows zero animations.
 
+### Checkpoint 3: start screen and Play/Pause (DRAFT, pending Developer review)
+
+- **Start screen** (title "The Jack-o'-Land", draft tagline, large **Enter** button) covers the dimmed, paused scene. Nothing moves until Enter; Enter is focused on load.
+- **Enter** hides the start screen, reveals Play/Pause, moves focus to it, and starts motion. Audio unlock will hook in here once sounds are chosen.
+- **Reduced motion:** if the device prefers it, the start screen says so and the scene starts still after Enter; the player can turn motion on with Play/Pause. (Decision: honor the preference automatically, no separate toggle.)
+- **Play/Pause:** one round icon button, top left (moved from bottom center at the Developer's request; this frees the bottom 15% of the scene), at least 48px. Toggles `is-paused` on the stage via a single `setPlaying()` in `js/main.js`; later systems (audio, timers, interaction, stories) subscribe through `onPlayStateChange`. Icon swaps between pause and play; `aria-label` says "Pause" or "Play".
+- Checks: nothing animates before Enter; Enter starts motion (unless reduced); pause freezes, resume continues; tap targets at least 44px; keyboard Tab/Enter/Space reachable; text readable.
+
+### Checkpoint 4: wandering character (DRAFT, pending Developer review)
+
+- A caped character stands in front of the scene near the bottom (under the fog). It idles 1.5-4 s, picks a random spot at least 15% of the stage width away, walks there (facing the direction of travel), and repeats.
+- It never leaves the screen: its whole frame box is kept inside the stage (x from 17% to 83% of stage width at the current size).
+- Size: about as tall as the house door (Developer request). One setting, `--char-w` in `css/styles.css` (frame box width, now 47.8% of stage width: the box grew when the hang art was added, and the figure is the same size as when the box was 34%); `character.js` reads it, and walk speed scales with it (0.6 character-widths per second) so stride stays matched.
+- It follows the shared pause rule: `js/character.js` reads the stage's `is-paused` class every frame, so Play/Pause, the start screen and reduced motion (scene starts paused) all control it, and it resumes from the same spot.
+- Provisional, tune by eye: walk speed, frame rates (walk 8 fps, idle 5 fps), vertical position (4% above the bottom).
+- Not interactive yet; whether it triggers or joins a story is undecided.
+- Checks: stays on screen at all times; walks both directions; pausing freezes position and frame; resume continues from the same spot; no jump when switching idle and walk.
+
+### Checkpoint 5: grab and drop the character, keyboard pointer (DRAFT, pending Developer review)
+
+- **Grab:** pressing on the character's body (mouse, finger or pen) picks it up. It lifts quickly until its raised fist is under the pointer, switches to the hang animation, and follows the pointer while held. Pointer coordinates are in stage units (percent of stage width), so it behaves the same on every phone.
+- **Drag limits:** the visible art always stays on screen, even when the pointer goes past an edge (limits measured from the sprites, in CSS on `.character`).
+- **Release:** it falls with gravity to the ground line, bounces once, small (one constant, `BOUNCE`; 0 turns it off), then returns to idle and starts wandering again. The Developer did not choose bounce vs plain landing; the recommended small bounce is in for now.
+- **Keyboard pointer (Developer request):** after Enter, focus is on the scene. Arrow keys move a visible pointer (starts slow, speeds up while held); Space is its button: hold Space to hold, release Space to let go. A tap of Space is a click, for later story triggers. The pointer appears only while arrow keys are in use and hides when the mouse or touch is used. Space and arrows only act when the scene itself is focused, so Space still toggles Play/Pause when that button has focus.
+- **One pointer system:** `js/pointer.js` turns mouse, touch, pen and the keyboard pointer into press/move/release on registered "grabbables". The character registers one; story triggers can later.
+- **Pause:** nothing can be grabbed while paused, and pausing lets go of a held character (it then hangs frozen in mid-fall until resumed).
+- **Touch:** the scene sets `touch-action: none`, so dragging does not scroll or zoom the page.
+- Checks: fist follows the pointer; stays on screen at all four corners and beyond; release lands in under 2 s from near the top; wandering resumes after landing; pause freezes mid-hold; keyboard: cursor appears, moves, grabs with Space, carries with arrows, drops on release; Space on other controls is left alone; the mouse hides the keyboard pointer.
+
 **Open (provisional or undecided)**
 
 - Exact moon and cloud placement and sizes, fog opacity: tune by eye.

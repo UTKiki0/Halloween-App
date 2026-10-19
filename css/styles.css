@@ -29,6 +29,9 @@ body {
 
 .stage {
   position: relative;
+  touch-action: none;             /* dragging on the scene must not scroll or zoom the page */
+  -webkit-user-select: none;
+  user-select: none;
   /* Fit by height or width, whichever is the limiting side. */
   width: min(100vw, calc(100dvh * var(--stage-ratio)));
   aspect-ratio: 941 / 1672;
@@ -102,6 +105,37 @@ body {
   mask-composite: intersect;
 }
 
+/* Character: an 8-frame strip, one frame visible at a time (js/character.js sets left, translate,
+   scale and background-position-x). All three strips share one 416x358 frame box with the head
+   centered, so the box is centered on `left` and mirrored around the head with `scale`.
+   Walk/idle stand with feet at the box bottom; the hang strip hangs from its fist at the top.
+
+   Sizing and geometry live here and are read by character.js:
+   --char-w         box width, % of stage width. 47.8 makes the standing figure (256px of the
+                    358px-high box) about as tall as the house door.
+   --extent-ground  visible half-width while standing/walking, as a fraction of the box
+                    (measured 0.346 / 0.337 from the strips; 0.355 leaves a small margin)
+   --extent-air-*   visible reach left/right of the head center while hanging (measured 0.49 and
+                    0.28: the arm and cape trail to the left); used to keep it on screen
+   --hold-x/y       the raised fist in the hang strip: fraction of box width from center, and of
+                    box height from the top. The pointer holds the character here. */
+.character {
+  --char-w: 47.8;
+  --extent-ground: 0.355;
+  --extent-air-left: 0.5;
+  --extent-air-right: 0.29;
+  --hold-x: -0.1625;
+  --hold-y: 0.0374;
+  left: 32%;
+  bottom: 4%;
+  width: calc(var(--char-w) * 1%);
+  aspect-ratio: 416 / 358;
+  translate: -50% 0;
+  background: url("../assets/art/char-idle.png") 0 0 / 800% 100% no-repeat;
+}
+.character.is-walking { background-image: url("../assets/art/char-walk.png"); }
+.character.is-hanging { background-image: url("../assets/art/char-hang.png"); }
+
 /* Dirt behind the scene's soft ground edge, fading in so no seam shows,
    and continuing to the bottom of the stage. */
 .ground {
@@ -141,16 +175,133 @@ body {
   to   { transform: translateX(-50%); }
 }
 
-/* One shared pause rule: the Play/Pause control (later) toggles .is-paused on the stage. */
+/* One shared pause rule: the Play/Pause button toggles .is-paused on the stage.
+   The stage starts paused; JS leaves it paused when the device prefers reduced motion,
+   so the player can still choose to turn motion on with the button. */
 .stage.is-paused .layer,
 .stage.is-paused .layer img {
   animation-play-state: paused;
 }
 
-/* Reduced motion: everything holds still at its resting position. */
-@media (prefers-reduced-motion: reduce) {
-  .layer, .layer img { animation: none; }
+/* ---------- UI ---------- */
+
+/* One unit = 1% of stage width, so UI scales with the scene. */
+:root { --u: calc(min(100vw, 100dvh * var(--stage-ratio)) / 100); }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+/* Scene focus ring (keyboard only) and mouse hover/grab cursors. */
+.stage:focus { outline: none; }
+.stage:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
+.stage.can-grab { cursor: grab; }
+.stage.is-grabbing { cursor: grabbing; }
+
+/* Keyboard pointer: arrow tip (top-left of the box) is the hotspot. Fills orange while Space is held. */
+.cursor {
+  z-index: 5;
+  left: 50%;
+  top: 60%;
+  width: calc(var(--u) * 7);
+  min-width: 28px;
+  aspect-ratio: 1;
+}
+.cursor[hidden] { display: none; }
+.cursor svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.cursor path { fill: #fff; stroke: #1a0f2e; stroke-width: 1.5; stroke-linejoin: round; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+.cursor.is-pressed path { fill: #ff8a1f; }
+
+/* Start screen: dims the paused scene behind it. */
+.start {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 5);
+  padding: 0 calc(var(--u) * 8);
+  text-align: center;
+  font-family: "Chalkboard SE", "Trebuchet MS", system-ui, sans-serif;
+  background: radial-gradient(ellipse at center, rgba(5, 8, 46, 0.55), rgba(3, 4, 24, 0.88));
+  transition: opacity 0.6s ease, visibility 0.6s;
+}
+.start.is-hidden { opacity: 0; visibility: hidden; }
+
+.nowrap { white-space: nowrap; }
+.start h1 {
+  font-size: calc(var(--u) * 11.5);
+  line-height: 1.05;
+  color: #ff9a2e;
+  text-shadow: 0 calc(var(--u) * 0.6) 0 #3a1650, 0 0 calc(var(--u) * 6) rgba(255, 140, 30, 0.45);
+}
+.tagline {
+  font-size: calc(var(--u) * 4.6);
+  line-height: 1.35;
+  color: #f3e9ff;
+}
+.enter {
+  min-width: calc(var(--u) * 40);
+  min-height: 56px;
+  padding: calc(var(--u) * 3) calc(var(--u) * 9);
+  border: 0;
+  border-radius: 999px;
+  background: #ff8a1f;
+  color: #1a0f2e;
+  font-size: calc(var(--u) * 6);
+  font-weight: 800;
+  box-shadow: 0 calc(var(--u) * 1) 0 #a24800, 0 0 calc(var(--u) * 5) rgba(255, 138, 31, 0.5);
+}
+.enter:active { transform: translateY(2px); }
+.key-hint {
+  font-size: calc(var(--u) * 3.4);
+  line-height: 1.4;
+  color: #d9ccf0;
+}
+/* Touch-only devices have no use for the keyboard hint. */
+@media (pointer: coarse) { .key-hint { display: none; } }
+.motion-note {
+  max-width: 28em;
+  font-size: calc(var(--u) * 3.8);
+  line-height: 1.4;
+  color: #d9ccf0;
+}
+
+/* Play/Pause: small round button, top left (clear of the notch via the safe-area inset). */
+.playpause {
+  position: absolute;
+  left: calc(var(--u) * 4);
+  top: calc(var(--u) * 4 + env(safe-area-inset-top, 0px));
+  width: max(48px, calc(var(--u) * 13));
+  height: max(48px, calc(var(--u) * 13));
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  background: rgba(20, 12, 40, 0.55);
+  color: #fff;
+  pointer-events: auto;   /* .layer turns pointer events off; this control opts back in */
+}
+.playpause[hidden] { display: none; }
+.playpause .icon { width: 46%; height: 46%; fill: currentColor; }
+/* Show the pause icon while running, the play icon while paused. */
+.playpause .icon-play { display: none; }
+.stage.is-paused .playpause .icon-pause { display: none; }
+.stage.is-paused .playpause .icon-play { display: block; }
 
 /* Reserved layers (empty for now). */
 .effects, .ui { inset: 0; }
