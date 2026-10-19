@@ -106,13 +106,14 @@ body {
 }
 
 /* Character: an 8-frame strip, one frame visible at a time (js/character.js sets left, translate,
-   scale and background-position-x). All three strips share one 416x358 frame box with the head
-   centered, so the box is centered on `left` and mirrored around the head with `scale`.
-   Walk/idle stand with feet at the box bottom; the hang strip hangs from its fist at the top.
+   scale and background-position-x). All six strips (hero and vampire, walk/idle/hang) share one
+   418x360 frame box with the head centered, so the box is centered on `left` and mirrored around
+   the head with `scale`. Walk/idle stand with feet at the box bottom; the hang strip hangs from
+   its fist at the top.
 
    Sizing and geometry live here and are read by character.js:
-   --char-w         box width, % of stage width. 47.8 makes the standing figure (256px of the
-                    358px-high box) about as tall as the house door.
+   --char-w         box width, % of stage width. 48 makes the standing figure (256px of the
+                    360px-high box) about as tall as the house door.
    --extent-ground  visible half-width while standing/walking, as a fraction of the box
                     (measured 0.346 / 0.337 from the strips; 0.355 leaves a small margin)
    --extent-air-*   visible reach left/right of the head center while hanging (measured 0.49 and
@@ -120,21 +121,68 @@ body {
    --hold-x/y       the raised fist in the hang strip: fraction of box width from center, and of
                     box height from the top. The pointer holds the character here. */
 .character {
-  --char-w: 47.8;
+  --char-w: 48;
   --extent-ground: 0.355;
   --extent-air-left: 0.5;
   --extent-air-right: 0.29;
-  --hold-x: -0.1625;
-  --hold-y: 0.0374;
+  --hold-x: -0.1627;
+  --hold-y: 0.0372;
   left: 32%;
   bottom: 4%;
   width: calc(var(--char-w) * 1%);
-  aspect-ratio: 416 / 358;
+  aspect-ratio: 418 / 360;
   translate: -50% 0;
+  transform-origin: 50% 100%;   /* scale around the feet, so shrinking into the coffin keeps them planted */
   background: url("../assets/art/char-idle.png") 0 0 / 800% 100% no-repeat;
 }
 .character.is-walking { background-image: url("../assets/art/char-walk.png"); }
 .character.is-hanging { background-image: url("../assets/art/char-hang.png"); }
+/* After Story 1 the character is the vampire: same three poses, same box and scale. */
+.character.is-vamp { background-image: url("../assets/art/char-vamp-idle.png"); }
+.character.is-vamp.is-walking { background-image: url("../assets/art/char-vamp-walk.png"); }
+.character.is-vamp.is-hanging { background-image: url("../assets/art/char-vamp-hang.png"); }
+
+/* ---------- Story 1: the vampire coffin ----------
+   All values below are set per frame by js/character.js; these rules only give the layers a
+   starting look. Positions are in --u (1% of stage width); the coffin sits at about x 4-34, y 110-150. */
+
+/* A copy of the scene art clipped to the coffin (polygon in % of the 941x1672 art), shown only
+   during the story. Rattles around the coffin's base. */
+.coffin-dup {
+  opacity: 0;
+  transform-origin: 16.6% 89.1%;
+  clip-path: polygon(0.85% 70.6%, 12.8% 65.8%, 31.9% 70.6%, 32.4% 86.7%, 24.4% 88.8%, 8.5% 90%, 1.1% 86.4%);
+}
+.coffin-fx { inset: 0; }
+.coffin-glow {
+  position: absolute;
+  left: calc(var(--u) * 2);
+  top: calc(var(--u) * 100);
+  width: calc(var(--u) * 44);
+  height: calc(var(--u) * 56);
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(ellipse at 50% 55%, rgba(255, 80, 130, 0.95), rgba(150, 70, 255, 0.55) 45%, rgba(150, 70, 255, 0) 72%);
+}
+.puff {
+  position: absolute;
+  left: calc(var(--u) * 17);
+  top: calc(var(--u) * 126);
+  width: calc(var(--u) * 18);
+  height: calc(var(--u) * 18);
+  opacity: 0;
+  background: radial-gradient(circle, rgba(225, 215, 250, 0.9), rgba(225, 215, 250, 0) 66%);
+}
+.coffin-flash {
+  position: absolute;
+  left: calc(var(--u) * -16);
+  top: calc(var(--u) * 95);
+  width: calc(var(--u) * 70);
+  height: calc(var(--u) * 70);
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1), rgba(235, 200, 255, 0.7) 35%, rgba(235, 200, 255, 0) 70%);
+}
 
 /* Dirt behind the scene's soft ground edge, fading in so no seam shows,
    and continuing to the bottom of the stage. */
@@ -179,7 +227,7 @@ body {
    The stage starts paused; JS leaves it paused when the device prefers reduced motion,
    so the player can still choose to turn motion on with the button. */
 .stage.is-paused .layer,
-.stage.is-paused .layer img {
+.stage.is-paused .layer * {
   animation-play-state: paused;
 }
 

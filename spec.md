@@ -73,7 +73,7 @@ Reference the brief's fixed requirements rather than copying them. Specify your 
 
 - A caped character stands in front of the scene near the bottom (under the fog). It idles 1.5-4 s, picks a random spot at least 15% of the stage width away, walks there (facing the direction of travel), and repeats.
 - It never leaves the screen: its whole frame box is kept inside the stage (x from 17% to 83% of stage width at the current size).
-- Size: about as tall as the house door (Developer request). One setting, `--char-w` in `css/styles.css` (frame box width, now 47.8% of stage width: the box grew when the hang art was added, and the figure is the same size as when the box was 34%); `character.js` reads it, and walk speed scales with it (0.6 character-widths per second) so stride stays matched.
+- Size: about as tall as the house door (Developer request). One setting, `--char-w` in `css/styles.css` (frame box width, now 48% of stage width: the box grew when the hang art and the vampire were added, and the figure is the same size as when the box was 34%); `character.js` reads it, and walk speed scales with it (0.6 character-widths per second) so stride stays matched.
 - It follows the shared pause rule: `js/character.js` reads the stage's `is-paused` class every frame, so Play/Pause, the start screen and reduced motion (scene starts paused) all control it, and it resumes from the same spot.
 - Provisional, tune by eye: walk speed, frame rates (walk 8 fps, idle 5 fps), vertical position (4% above the bottom).
 - Not interactive yet; whether it triggers or joins a story is undecided.
@@ -89,6 +89,20 @@ Reference the brief's fixed requirements rather than copying them. Specify your 
 - **Pause:** nothing can be grabbed while paused, and pausing lets go of a held character (it then hangs frozen in mid-fall until resumed).
 - **Touch:** the scene sets `touch-action: none`, so dragging does not scroll or zoom the page.
 - Checks: fist follows the pointer; stays on screen at all four corners and beyond; release lands in under 2 s from near the top; wandering resumes after landing; pause freezes mid-hold; keyboard: cursor appears, moves, grabs with Space, carries with arrows, drops on release; Space on other controls is left alone; the mouse hides the keyboard pointer.
+
+### Checkpoint 6: Story 1, the vampire coffin (DRAFT, pending Developer review)
+
+Story 1 of the three required stories. Trigger: drag the character over the coffin and let go.
+
+- **Trigger:** releasing the pointer (mouse, touch or the keyboard pointer) inside the coffin zone, about x 4-34 and y 108-151 in stage units, covering the whole coffin. Releasing anywhere else just drops the character as before.
+- **Sequence, about 6 s from release to landing:**
+  1. 0-0.9 s: the character shrinks and fades into the coffin, shrinking around its raised fist (the part being held) so the whole body converges inside the coffin.
+  2. 0.9-4.8 s: a copy of the coffin (the scene art clipped to the coffin) appears in front and rattles, growing stronger; a purple-to-red glow builds; mist puffs rise. Audio goes here later.
+  3. 4.8 s: a white flash; the character swaps to the vampire and leaps out of the coffin to the right, growing back to full size; the coffin copy fades; it lands (small bounce) near x 44 and goes idle, then wanders as the vampire.
+- **Everything else is locked while it plays:** grabbing the character is blocked from release until it lands. Play/Pause still works: pausing freezes every part of the sequence and resume continues from the same moment.
+- **Plays once (Developer decision):** after it ends, dropping the vampire into the coffin does nothing special (it just falls). The vampire can still be grabbed and dragged (vampire hang strip). `resetStory()` (returned by `startCharacter`, not yet called by anything) turns the character back to normal and re-arms the story; the Developer will call it when all three stories are complete so the cycle can run again.
+- **Not yet in this checkpoint:** sound, progressive hint text, story progress feedback beyond the effects, and the other two stories.
+- Checks: release away from the coffin starts no story; release over it starts the sequence; grabbing is blocked during it; the coffin copy rattles, glow and mist appear; pause mid-sequence freezes everything; flash fires when the vampire appears; ends as the vampire, standing on the ground, on screen, full size; effects all off; total length between 5 and 10 s; a second drop does not restart it; reset restores the hero and allows a replay.
 
 **Open (provisional or undecided)**
 

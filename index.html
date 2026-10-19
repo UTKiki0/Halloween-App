@@ -27,6 +27,17 @@
     <!-- Wandering character: stands in front of the scene, under the fog. Sprite strips are
          normalized from the original sheets (see research.md). Moved by js/character.js. -->
     <div class="layer character" id="character" aria-hidden="true"></div>
+
+    <!-- Story 1 (the vampire coffin). Hidden until the character is dropped into the coffin.
+         The coffin copy is the scene art clipped to the coffin and drawn in front of the character,
+         so the character can drop in behind it and the coffin can rattle. See js/character.js. -->
+    <img class="layer scene coffin-dup" id="coffin-dup" src="assets/art/fg-scene.png" alt="">
+    <div class="layer coffin-fx" id="coffin-fx" aria-hidden="true">
+      <div class="coffin-glow"></div>
+      <div class="puff"></div><div class="puff"></div><div class="puff"></div>
+      <div class="puff"></div><div class="puff"></div><div class="puff"></div>
+      <div class="coffin-flash"></div>
+    </div>
     <!-- Fog rolls as a strip of 4 tiles (normal, mirrored, normal, mirrored) so the joins are seamless. -->
     <div class="layer fog fog-a">
       <img src="assets/art/fx-fog.png" alt=""><img class="flip" src="assets/art/fx-fog.png" alt=""><img src="assets/art/fx-fog.png" alt=""><img class="flip" src="assets/art/fx-fog.png" alt="">
