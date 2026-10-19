@@ -20,6 +20,14 @@ Create your own checklist for the next few results, using the workflow in `brief
 
 Test each result before continuing, including related behavior that already works. Update priorities as evidence emerges and preserve meaningful working checkpoints in git. Before delivery, verify the deployed app against the brief and specification.
 
+**Main risk:** the layered art may not hold up across phone shapes (cropping, blend modes, soft or fringed edges).
+
+- [ ] 1. Project skeleton: `index.html`, `css/`, relative paths (`js/` added when first needed). Verify: loads in Live Server and Simple Browser. *Agent built it; headless Edge renders it. Developer still to confirm in Live Server.*
+- [ ] 2. Static composite per `spec.md` checkpoint 1. Verify: screenshots at 390x844, 360x640, 430x932; no scroll; objects fully visible. *Agent checked all three sizes in headless Edge: no scroll, house/coffin/pumpkins fully visible. Taller phones letterbox top and bottom, blended into sky/dirt colors. Developer to confirm by eye.*
+- [ ] 3. Credits stub and `research.md` asset log (tool, prompts, license terms). Verify: every file in `assets/art/` used is listed.
+- [ ] 4. Commit, enable GitHub Pages (confirm with Developer first). Verify: Developer opens the HTTPS URL on a physical phone.
+- Next, not yet planned in detail: start screen (Enter, reduced-motion check), Play/Pause, then ambient effects and audio one system at a time, then story 1.
+
 ## Evidence and revisions
 
 Record non-identifying playtest observations, separating what Users did or said from your interpretation. Use the findings to choose revision priorities and record what changed and how you verified the improvement.

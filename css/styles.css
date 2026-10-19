@@ -1,0 +1,93 @@
+/* Layout model: one portrait "stage" with the art's aspect ratio (941x1672),
+   fitted inside the viewport and centered. Layers are absolutely positioned
+   in percentages of the stage so everything scales together. */
+
+:root {
+  --stage-ratio: 941 / 1672;
+  --sky-top: #0b0820;
+  --sky-mid: #1d1642;
+  --sky-low: #3a2a63;
+  --dirt: #4a3426;
+  --dirt-dark: #2a1d16;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  /* Letterbox bars continue the stage: sky color above, dark dirt below. */
+  background: linear-gradient(to bottom, var(--sky-top) 50%, var(--dirt-dark) 50%);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage {
+  position: relative;
+  /* Fit by height or width, whichever is the limiting side. */
+  width: min(100vw, calc(100dvh * var(--stage-ratio)));
+  aspect-ratio: 941 / 1672;
+  overflow: hidden;
+  background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-low) 100%);
+}
+
+.layer {
+  position: absolute;
+  display: block;
+  /* Decorative layers never intercept taps; interactive pieces opt back in later. */
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Moon: upper right, behind the house spire and partly behind a cloud. */
+.moon { width: 36%; left: 62%; top: 1%; }
+
+/* Clouds: different sizes/depths so they can drift at different speeds later. */
+.cloud-bank      { width: 78%; left: -14%; top: 7%;  opacity: 0.9; }
+.cloud-windswept { width: 62%; left: 52%;  top: 12%; }
+.cloud-small     { width: 34%; left: 6%;   top: 19%; opacity: 0.95; }
+
+/* Scene art is 94% of stage height, leaving the bottom ~15% free of key art for UI. */
+.scene {
+  height: 94%;
+  left: 3%;
+  top: 0;
+  width: 94%;
+  object-fit: contain;
+  object-position: top;
+  /* Feather the ground's hard rectangular edge (bottom and sides) into the dirt behind. */
+  -webkit-mask-image:
+    linear-gradient(to bottom, #000 90%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, #000 90%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* Dirt behind the scene's soft ground edge, fading in so no seam shows,
+   and continuing to the bottom of the stage. */
+.ground {
+  left: 0; right: 0; bottom: 0;
+  height: 26%;
+  background: linear-gradient(to bottom, transparent 0%, var(--dirt) 45%, var(--dirt-dark) 100%);
+}
+
+/* Fog: black in the PNG becomes invisible with screen blending. */
+.fog {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+}
+
+/* Reserved layers (empty for now). */
+.effects, .ui { inset: 0; }

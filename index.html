@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Virtual Hallo-weenie</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- The stage keeps a fixed phone aspect ratio; every layer is positioned in % of it. -->
+  <main class="stage" role="img" aria-label="A cartoon haunted house at night with a vampire coffin and a pumpkin patch under a full moon">
+    <!-- Layers, back to front. All art is decorative; the stage carries the description. -->
+    <img class="layer moon" src="assets/art/fx-moon.png" alt="">
+    <img class="layer cloud cloud-bank" src="assets/art/fx-cloud-bank.png" alt="">
+    <img class="layer cloud cloud-windswept" src="assets/art/fx-cloud-windswept.png" alt="">
+    <img class="layer cloud cloud-small" src="assets/art/fx-cloud-small.png" alt="">
+    <div class="layer ground"></div>
+    <img class="layer scene" src="assets/art/fg-scene.png" alt="">
+    <img class="layer fog" src="assets/art/fx-fog.png" alt="">
+
+    <!-- Reserved for later: particle/effect layer, then UI (Play/Pause lives in the bottom 15%). -->
+    <div class="layer effects" id="effects"></div>
+    <div class="layer ui" id="ui"></div>
+  </main>
+</body>
+</html>
