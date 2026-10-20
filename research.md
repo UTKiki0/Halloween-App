@@ -59,6 +59,22 @@ Why derived strips: the originals were not aligned. The second row sat 12-30px h
 
 Known limitation: moon halo has slight edge fringing; check on device.
 
+### Audio for Story 1 (chosen by the Developer, 2026-10-19)
+
+All from [Freesound](https://freesound.org/). The license was read on each sound's own page (not inferred from the search filter): all show "Creative Commons 0" (public domain dedication, https://creativecommons.org/publicdomain/zero/1.0/): no permission or credit needed. Credits are given anyway, as the brief requires. Judged from titles, descriptions and tags only; the Developer auditioned them. Downloading requires a Freesound login, so the Developer saved the files into `assets/sound/` (done; file names in the last column). File sizes matched the Freesound pages. Each file was then decoded and measured (loudness every 0.05-1 s) to choose trim points. Findings that shaped the mix: the growl `642949` is very quiet (peak -17.7 dBFS) and builds to a peak around 3-3.75 s, so it is boosted about +11 dB and played from 0.5 s; the drone `249985` rises from -33 dB to -9 dB over 23 s, so its first seconds give a natural build; the laugh `659757` is silent for its first 0.5 s and peaks slightly above 0 dBFS, so it starts at 0.55 s with gain 0.6; `802472`, `275214` and `714257` peak near 0 dBFS; the cape file `711122` has a burst about every 2-3 s, and the cut at 2.9 s (1.3 s long) takes one. The whole set is about 7.2 MB, mostly the 4.7 MB drone: a candidate to compress if load time on phones is a problem.
+
+| Moment | Sound (uploader) | Freesound page | Length | Intended use | File in repo |
+|---|---|---|---|---|---|
+| Drop-in, 0-0.9 s | "Whoosh - Magic disappear" (Sadiquecat) | https://freesound.org/people/Sadiquecat/sounds/802472/ | 0.24 s | the shrink into the coffin | `assets/sound/802472__sadiquecat__whoosh-magic-disappear.wav` |
+| Rattle, 0.9-4.8 s | "coffin3.ogg" (Kneeling) | https://freesound.org/people/Kneeling/sounds/642949/ | 6.4 s | something restless scratching inside; trim to about 3.9 s | `assets/sound/642949__kneeling__coffin3.ogg` |
+| Rattle hits | "coffin wood box movement _CsG.wav" (csaszi) | https://freesound.org/people/csaszi/sounds/275214/ | 0.8 s | wooden knocks timed to the shaking | `assets/sound/275214__csaszi__coffin-wood-box-movement-_csg.wav` |
+| Glow and mist | "Eerie Dark Drone Soundscape" (Werra) | https://freesound.org/people/Werra/sounds/249985/ | 28 s | drone fading in under the rattle | `assets/sound/249985__werra__eerie-dark-drone-soundscape.wav` |
+| Flash, 4.8 s | "Puff of Smoke" (qubodup) | https://freesound.org/people/qubodup/sounds/714257/ | 0.5 s | the poof as the vampire appears (qubodup's own mix of six other CC0 sounds) | `assets/sound/714257__qubodup__puff-of-smoke.wav` |
+| Leap out | "Laughing Vampire Boss, Remastered.wav" (LilMati) | https://freesound.org/people/LilMati/sounds/659757/ | 5.0 s | vampire laugh; use about 1.5-2 s (built from "Demonic Laugh" by TheSoundmakerqueen, also CC0, made with voicechanger.io) | `assets/sound/659757__lilmati__laughing-vampire-boss-remastered.wav` |
+| Cape swoop | "Large Wings / Superhero Cape Foley" (Cultureshock007) | https://freesound.org/people/Cultureshock007/sounds/711122/ | 43 s | a short excerpt for the leap | `assets/sound/711122__cultureshock007__large-wings-superhero-cape-foley.mp3` |
+
+Considered and not chosen: "Spooky drone G" (frankienoodles, 434794), "Laughing Wicked Vampire Boss" (LilMati, 659756), "Opening the sarcophagus" (Breviceps, 457529; stone slab, not wood). No landing sound found yet; the bounce stays silent unless one is added.
+
 ## Revisions
 
 Update decisions when new evidence changes the direction, linking to playtest observations in `plan.md` rather than copying them. Keep chosen behavior and asset requirements in `spec.md`. The Developer confirms when the inquiry is sufficient to continue building; exhaustive research is not a prerequisite.

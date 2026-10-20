@@ -53,12 +53,34 @@ const STORY = {
 };
 STORY.emergeAt = STORY.drop + STORY.rattle;   // story clock time of the flash and the leap
 
+// Sound cues on the story clock (seconds from release). Sounds are in js/audio.js; trim points
+// were chosen from loudness measurements of each file (see research.md).
+//   whoosh  - the shrink into the coffin
+//   scratch - something restless inside; quiet source (peak -18 dBFS), so boosted; builds to a peak
+//             just before the flash when played from 0.5 s
+//   drone   - rises under the glow (the file itself rises from -33 dB)
+//   knock   - wooden knocks that speed up and get louder with the rattle (time, gain, pitch)
+//   puff / laugh / cape - the flash, the vampire's laugh (silent until 0.5 s in the file), the cape swoop
+const KNOCKS = [[1.3, 0.35, 0.95], [2.2, 0.4, 1.05], [2.9, 0.5, 0.92], [3.4, 0.55, 1.1], [3.8, 0.65, 1.0],
+  [4.1, 0.75, 1.08], [4.35, 0.85, 0.94], [4.55, 0.9, 1.12], [4.7, 1.0, 1.0]];
+const CUES = [
+  { t: 0, sound: 'whoosh', gain: 0.8 },
+  { t: STORY.drop, sound: 'scratch', offset: 0.5, duration: 3.9, gain: 3.5, fadeIn: 0.25, fadeOut: 0.4 },
+  { t: STORY.drop, sound: 'drone', offset: 0.5, duration: 5.5, gain: 0.55, fadeIn: 0.8, fadeOut: 1.2 },
+  ...KNOCKS.map(([t, gain, rate]) => ({ t, sound: 'knock', gain, rate })),
+  { t: STORY.emergeAt, sound: 'puff', gain: 0.9 },
+  { t: STORY.emergeAt + 0.05, sound: 'laugh', offset: 0.55, duration: 2.2, gain: 0.6, fadeOut: 0.4 },
+  { t: STORY.emergeAt + 0.1, sound: 'cape', offset: 2.9, duration: 1.3, gain: 0.7, fadeIn: 0.05, fadeOut: 0.3 },
+].sort((a, b) => a.t - b.t);
+
 const random = (min, max) => min + Math.random() * (max - min);
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
-// `scheduleFrame` defaults to requestAnimationFrame; tests pass a timer-based stand-in.
-export function startCharacter(stage, hub, scheduleFrame = requestAnimationFrame) {
+// options.audio: sound player from js/audio.js (optional; without it the story is silent).
+// options.scheduleFrame: defaults to requestAnimationFrame; tests pass a timer-based stand-in.
+export function startCharacter(stage, hub, options = {}) {
+  const { audio = null, scheduleFrame = requestAnimationFrame } = options;
   const el = document.getElementById('character');
   if (!el) return null;
 
@@ -108,9 +130,13 @@ export function startCharacter(stage, hub, scheduleFrame = requestAnimationFrame
     idleLeft: random(...IDLE_SECONDS),
     held: { x: 32, lift: 0 }, // where the pointer wants the character while held
     lastPoint: { x: 0, y: 0 },// last pointer position while held (decides whether the drop was over the coffin)
-    story: { phase: null, clock: 0, started: false, done: false, from: { x: 0, lift: 0 }, leapTime: 0 },
+    story: newStory(),
   };
   // phase: null (not started) | 'enter' | 'rattle' | 'emerge' | 'done'
+  // nextCue: index of the next sound cue to fire (see CUES)
+  function newStory() {
+    return { phase: null, clock: 0, started: false, done: false, from: { x: 0, lift: 0 }, leapTime: 0, nextCue: 0 };
+  }
 
   function setMode(mode) {
     state.mode = mode;
@@ -203,6 +229,14 @@ export function startCharacter(stage, hub, scheduleFrame = requestAnimationFrame
     if (!story.started) return;
     if (story.clock < STORY.emergeAt + STORY.tail) story.clock += dt;   // effects keep timing after the leap
 
+    // Fire sound cues as the story clock passes them. The clock only runs while playing, and pausing
+    // suspends the audio context, so sound and picture stay together.
+    while (story.nextCue < CUES.length && story.clock >= CUES[story.nextCue].t) {
+      const { t, sound, ...settings } = CUES[story.nextCue];
+      if (audio) audio.play(sound, settings);
+      story.nextCue += 1;
+    }
+
     if (state.mode === 'enter') {
       const p = clamp01(story.clock / STORY.drop);
       const eased = 1 - (1 - p) ** 2;                       // slows into the coffin
@@ -264,7 +298,7 @@ export function startCharacter(stage, hub, scheduleFrame = requestAnimationFrame
   // Restore the original character and re-arm Story 1 (for when all the stories are finished).
   function resetStory() {
     el.classList.remove('is-vamp');
-    state.story = { phase: null, clock: 0, started: false, done: false, from: { x: 0, lift: 0 }, leapTime: 0 };
+    state.story = newStory();
     state.scale = 1;
     state.opacity = 1;
     setStoryPhase(null);

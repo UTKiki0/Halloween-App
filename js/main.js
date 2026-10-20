@@ -2,6 +2,7 @@
 // stage pauses all CSS motion. Later systems (audio, timers, interaction, stories)
 // should subscribe to `onPlayStateChange` so one control pauses or resumes them all.
 
+import { createAudio } from './audio.js';
 import { createPointerHub } from './pointer.js';
 import { startCharacter } from './character.js';
 
@@ -42,8 +43,12 @@ playPauseButton.addEventListener('click', () => {
 
 // Both follow the stage's is-paused class, so Play/Pause controls them too.
 const pointerHub = createPointerHub(stage);
+// Sound: the Web Audio context is resumed by the Enter tap and suspended/resumed by Play/Pause, so
+// every sound pauses and continues with the picture. (setPlaying runs inside the click handlers.)
+const audio = createAudio();
+onPlayStateChange((isPlaying) => audio.setPlaying(isPlaying));
 // Story 1 plays once. When all the stories are finished, call character.resetStory() to turn the
 // character back to normal and re-arm it so the cycle can start again.
-const character = startCharacter(stage, pointerHub);
+const character = startCharacter(stage, pointerHub, { audio });
 
 enterButton.focus();

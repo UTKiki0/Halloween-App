@@ -101,8 +101,19 @@ Story 1 of the three required stories. Trigger: drag the character over the coff
   3. 4.8 s: a white flash; the character swaps to the vampire and leaps out of the coffin to the right, growing back to full size; the coffin copy fades; it lands (small bounce) near x 44 and goes idle, then wanders as the vampire.
 - **Everything else is locked while it plays:** grabbing the character is blocked from release until it lands. Play/Pause still works: pausing freezes every part of the sequence and resume continues from the same moment.
 - **Plays once (Developer decision):** after it ends, dropping the vampire into the coffin does nothing special (it just falls). The vampire can still be grabbed and dragged (vampire hang strip). `resetStory()` (returned by `startCharacter`, not yet called by anything) turns the character back to normal and re-arms the story; the Developer will call it when all three stories are complete so the cycle can run again.
-- **Not yet in this checkpoint:** sound, progressive hint text, story progress feedback beyond the effects, and the other two stories.
+- **Sound (added in checkpoint 7):** see below.
+- **Not yet in this checkpoint:** progressive hint text, story progress feedback beyond the effects, a looping ambient scene sound, and the other two stories.
 - Checks: release away from the coffin starts no story; release over it starts the sequence; grabbing is blocked during it; the coffin copy rattles, glow and mist appear; pause mid-sequence freezes everything; flash fires when the vampire appears; ends as the vampire, standing on the ground, on screen, full size; effects all off; total length between 5 and 10 s; a second drop does not restart it; reset restores the hero and allows a replay.
+
+### Checkpoint 7: Story 1 sound (DRAFT, pending Developer review)
+
+Sources, licenses and trim reasoning are in `research.md`; credits in `CREDITS.md`.
+
+- **Cues on the story clock (seconds from release):** 0 whoosh as the character shrinks in; 0.9 the restless growl and the rising drone start under the rattle; nine wooden knocks from 1.3 to 4.7 s that speed up and get louder with the rattle; 4.8 the smoke poof with the flash; 4.85 the vampire laugh; 4.9 the cape swoop. 15 sounds per run.
+- **One audio switch:** all sounds go through one Web Audio context (`js/audio.js`). Sound is allowed by the Enter tap (the context is resumed inside that click, as mobile browsers require). Play/Pause suspends and resumes the whole context, so every sound mid-play freezes and continues exactly where it stopped, in step with the picture; no new sounds start while paused.
+- **Failure behavior:** if a sound cannot load or decode, the scene stays silent for that sound and everything else still works.
+- **Not yet specified:** a looping ambient background sound, a landing sound, sounds for the grab and drop, and any volume or mute control.
+- Checks: audio context starts suspended and runs after Enter; every cue fires once per run with the right trim points and timing; pause suspends the context and its clock stops; no cue fires during pause; resume continues; a second drop plays nothing; a reset allows all cues again.
 
 **Open (provisional or undecided)**
 
