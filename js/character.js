@@ -18,6 +18,11 @@
 // Size and sprite geometry live in CSS on `.character` (--char-w, --extent-*, --hold-*), so
 // there is one place to change them. Positions here are in "stage units" (percent of stage width).
 
+import { createSpeech } from './speech.js';
+
+// The Story 1 text hint, spoken now and then until the story has been played.
+const SPEECH_LINE = 'I really want a vampire outfit for Halloween';
+
 const FRAME_COUNT = 8;        // frames per strip (assets/art/char-*.png)
 const WALK_FPS = 8;
 const IDLE_FPS = 5;
@@ -96,12 +101,16 @@ export function startCharacter(stage, hub, options = {}) {
   const extentAirRight = cssNumber('--extent-air-right');  // ... and right of it (the arm and cape trail left)
   const holdX = cssNumber('--hold-x');                     // fist position: fraction of box width from center
   const holdY = cssNumber('--hold-y');                     // ... and fraction of box height from the top
+  const figureHeight = cssNumber('--figure-h');            // standing figure height as a fraction of the box height
   const walkSpeed = boxWidth * WALK_BOXES_PER_SECOND;
 
   const stageWidthPx = () => stage.clientWidth;
   const boxHeight = () => (el.getBoundingClientRect().height / stageWidthPx()) * 100;
   // Where the box bottom sits when standing (measured once, with no lift applied).
   const groundBottom = ((el.getBoundingClientRect().bottom - stage.getBoundingClientRect().top) / stageWidthPx()) * 100;
+  const standingBoxHeight = boxHeight();
+  const speech = createSpeech(stage, SPEECH_LINE);
+
   // Box lift that puts the raised fist at COFFIN.hideFistY (the box top is holdY of the box height above the fist).
   const liftInCoffin = groundBottom - (COFFIN.hideFistY - holdY * boxHeight() + boxHeight());
   // While going into or coming out of the coffin the figure scales around its fist, not its feet.
@@ -150,6 +159,8 @@ export function startCharacter(stage, hub, options = {}) {
     state.story.phase = phase;
     el.dataset.phase = phase || '';
     stage.dataset.story = phase === 'done' ? 'done' : phase ? 'playing' : '';
+    // The coffin's hint glow shows only while the story is waiting to be played (it returns after a reset).
+    stage.classList.toggle('story-spent', phase !== null);
   }
 
   // ---------- grabbing ----------
@@ -302,6 +313,7 @@ export function startCharacter(stage, hub, options = {}) {
     state.scale = 1;
     state.opacity = 1;
     setStoryPhase(null);
+    speech.reset();   // the hint starts over with the rest of the cycle
     if (state.mode === 'enter' || state.mode === 'inside') { state.lift = 0; setMode('idle'); }
     renderStory();
   }
@@ -371,6 +383,8 @@ export function startCharacter(stage, hub, options = {}) {
       const [minX, maxX] = groundBounds();
       state.x = Math.min(maxX, Math.max(minX, state.x));
     }
+    // The text hint: it speaks only while standing or walking, and only until the story has been played.
+    speech.update(dt, (state.mode === 'idle' || state.mode === 'walk') && !state.story.started);
   }
 
   function render() {
@@ -387,6 +401,8 @@ export function startCharacter(stage, hub, options = {}) {
     el.style.opacity = state.opacity;
     el.style.backgroundPositionX = `${(frame / (FRAME_COUNT - 1)) * 100}%`;
     renderStory();
+    // Top of the standing head, for the speech bubble (the bubble is only shown while standing or walking).
+    speech.render(state.x, groundBottom - state.lift - standingBoxHeight * figureHeight);
   }
 
   let last = performance.now();

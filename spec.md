@@ -115,6 +115,24 @@ Sources, licenses and trim reasoning are in `research.md`; credits in `CREDITS.m
 - **Not yet specified:** a looping ambient background sound, a landing sound, sounds for the grab and drop, and any volume or mute control.
 - Checks: audio context starts suspended and runs after Enter; every cue fires once per run with the right trim points and timing; pause suspends the context and its clock stops; no cue fires during pause; resume continues; a second drop plays nothing; a reset allows all cues again.
 
+### Checkpoint 8: Story 1 hint glow (DRAFT, pending Developer review)
+
+- **Hint (Developer request):** until Story 1 has been played, a faint aura glows around the coffin. It is a soft pink-and-purple ring just outside the coffin's edge (clear in the middle, so the coffin art is untouched), pulsing slowly (3.6 s per cycle, between 30% and 75% strength). It uses the same colors as the story's own glow, so the story reads as an escalation of the hint.
+- **When it shows:** from the start until the story begins; it fades out (0.5 s) the moment the story starts and stays off, including after the story ends. `resetStory()` brings it back with the rest of the cycle.
+- **Motion rules:** the pulse follows the shared pause rule, so while paused, and when the device prefers reduced motion (the scene starts paused), it holds still at its faint level instead of pulsing. It never blocks taps.
+- **Does not meet the brief's hint requirement on its own.** The brief asks for progressive text hints over time that hint without telling. Open: what the text hints say, when each appears (for example after N seconds without progress), and whether the glow itself should strengthen over time.
+- Checks: glow shows before the story, centered on the coffin; goes away when the story starts and stays away; returns after a reset; pointer-events none.
+
+### Checkpoint 9: Story 1 text hint, the character's speech bubble (DRAFT, pending Developer review)
+
+- **Hint (Developer request):** now and then the character shows a speech bubble saying exactly "I really want a vampire outfit for Halloween". It hints at the goal without saying what to do.
+- **Schedule (provisional, tune by eye):** the first bubble appears 6 s into play; each stays up 4.5 s (with a 0.25 s fade-out); then a random 14-22 s gap before the next. Timing runs on game time, so pausing freezes it.
+- **When it speaks:** only while standing or walking and only until Story 1 has started. A bubble is removed at once if the character is picked up or the story starts; after an interruption it waits at least 4 s before the next one. After the story it never speaks again; `resetStory()` restarts the schedule from the 6 s mark.
+- **Look:** a cream bubble with a dark purple outline, bold rounded text (about 16 px on a 390 px-wide phone, wrapping to about three lines), a tail pointing at the head, popping in with a small bounce. The bubble sits above the head, follows the character, stays at least 1.5 stage units inside both screen edges (the tail still points at the head), and never blocks taps. Under reduced motion it appears without the bounce.
+- **Accessibility:** the bubble is visual only; the same line is announced politely through a screen-reader live region while the bubble is up.
+- **Not yet decided:** whether the hint gets more direct the longer the player goes without progress (the brief asks for progressive hints), and whether other lines are needed for Stories 2 and 3.
+- Checks: exact line and live region; first bubble near 6 s; 14-22 s gaps; 4.5 s on screen; always fully on screen and above the head; frozen while paused; hidden at once when picked up; hidden when the story starts and never returns afterward; returns about 6 s after a reset.
+
 **Open (provisional or undecided)**
 
 - Exact moon and cloud placement and sizes, fog opacity: tune by eye.

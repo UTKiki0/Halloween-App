@@ -24,6 +24,10 @@
     <div class="layer cloud cloud-small"><img src="assets/art/fx-cloud-small.png" alt=""></div>
     <div class="layer ground"></div>
     <img class="layer scene" src="assets/art/fg-scene.png" alt="">
+    <!-- Hint for Story 1: a faint pulsing aura around the coffin until the story has been played
+         (hidden by the stage's story-spent class; see js/character.js). -->
+    <div class="layer coffin-hint" aria-hidden="true"><div class="coffin-hint-glow"></div></div>
+
     <!-- Wandering character: stands in front of the scene, under the fog. Sprite strips are
          normalized from the original sheets (see research.md). Moved by js/character.js. -->
     <div class="layer character" id="character" aria-hidden="true"></div>
@@ -56,6 +60,13 @@
         <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
       </button>
     </div>
+
+    <!-- Speech bubble above the character's head (js/speech.js): the Story 1 text hint. The bubble is
+         visual only; screen readers hear the same line through the always-present live region. -->
+    <div class="layer speech" id="speech" aria-hidden="true">
+      <div class="speech-bubble"><span class="speech-text"></span></div>
+    </div>
+    <p class="sr-only" id="speech-live" role="status" aria-live="polite"></p>
 
     <!-- Keyboard pointer: shown only while arrow keys are in use (js/pointer.js). Tip is the hotspot. -->
     <div class="layer cursor" id="cursor" hidden aria-hidden="true">
