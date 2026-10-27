@@ -1,0 +1,151 @@
+Story 2 and Story 3 sound verification — 2026-10-27
+
+Headless Microsoft Edge, 390x844.
+Story checks use real story modules and pointer input with a deterministic clock,
+recording sound calls; audio checks use real decoders and muted Web Audio sources.
+Developer listening and physical-phone review remain pending.
+
+Commands:
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/run-story-checks.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/run-story-checks.ps1 -Suite audio-regression
+
+95 story checks; 33 audio checks; all passed.
+
+Evidence: C:\Users\kjart\AppData\Local\Temp\halloween-story-test-c367cd94441b41d09c4e222805ce320f
+Viewport: 390x844
+PASS No story before Enter
+PASS Pumpkin locked before Story 1
+PASS Original hint appears after six seconds
+PASS Release away from coffin does not trigger story
+PASS Door story is locked before the vampire transformation
+PASS Coffin enters rattle phase
+PASS Character locked during story
+PASS Pause freezes character, effects, speech and sound cues
+PASS Story ends as vampire
+PASS All fifteen Story 1 cues fire once
+PASS Vampire restores full opacity and scale
+PASS Hint stops after story starts
+PASS Second coffin drop does not replay story
+PASS Reset restores hero and hint
+PASS Reset allows a complete replay
+PASS Pumpkin unlocks after Story 1
+PASS Cancelled press does not carve pumpkin
+PASS Drag does not count as pumpkin tap
+PASS Pausing a real pointer press cancels the tap
+PASS Touch cancellation does not count as a tap
+PASS First tap reveals hollow pumpkin
+PASS Tap produces feedback around the pumpkin
+PASS Pause freezes tap feedback
+PASS Pumpkin progress persists while waiting
+PASS Tap feedback clears without brightening the patch
+PASS Patch color stays constant during and after a tap
+PASS Arrow keys and Space advance pumpkin through real pointer hub
+PASS Rapid next tap waits for carving feedback
+PASS Queued third tap starts pickup
+PASS Character locked during pumpkin pickup
+PASS Working smoke becomes dense
+PASS Pause freezes pickup, smoke, art swap and cues
+PASS Six-second pickup ends with basket
+PASS Removed-pumpkin background revealed
+PASS Smoke clears after pickup
+PASS Story 2 plays each of its five approved cues once, in order
+PASS Working sound and reveal puff follow active story time through pause
+PASS Character becomes grabbable after pickup
+PASS Completed pumpkin cannot trigger again
+PASS Basket reveal uses normalized idle strip
+PASS Basket form retains the shared strip size
+PASS Wandering uses basket walk animation
+PASS Wandering advances through all eight basket walk frames
+PASS Standing advances through all eight basket idle frames
+PASS Grabbing uses basket hang animation
+PASS Basket fist stays within one pixel of pointer hotspot
+PASS Holding advances through all eight basket hang frames
+PASS Pause freezes basket pose and position
+PASS Falling retains basket hang pose
+PASS Landing returns to basket ground poses
+PASS Only after basket pickup does the door story and hint unlock
+PASS Cancelled door drop does not trigger Story 3
+PASS Story 3 reaches approach
+PASS Story 3 blocks grabbing immediately
+PASS Pause freezes Story 3 approach
+PASS Story 3 reaches knock
+PASS Story 3 speech is visible and announced
+PASS Vampire stands on the doorstep at the intended depth
+PASS Pause freezes Story 3 knock
+PASS Story 3 reaches offer
+PASS The door opens and the skeleton offers candy
+PASS Pause freezes Story 3 offer
+PASS Story 3 reaches candy
+PASS Candy handoff uses the supplied chronological character sheet
+PASS Pause freezes Story 3 candy
+PASS Story 3 reaches receive
+PASS Candy reaches the full-basket frame
+PASS Story 3 reaches cheer
+PASS Pause freezes Story 3 cheer
+PASS Story 3 reaches down
+PASS Door closes and hand clears before returning to ground
+PASS Story 3 reaches exit
+PASS Vampire walks out carrying the collected candy
+PASS Pause freezes Story 3 exit
+PASS Story 3 reaches return
+PASS Costume reset happens with the entire character frame off-screen
+PASS Original character and pumpkin are restored together off-screen
+PASS Return walk remains locked against grabbing
+PASS Pause freezes Story 3 return
+PASS Story 3 reaches locked
+PASS Story 3 including exit and return lasts 5-10 active seconds (measured 9.733s)
+PASS Hero walks back to the original position and the coffin hint re-arms once
+PASS Interaction resumes after the hero returns
+PASS Story 3 plays three knocks, door creak, candy rustle and cheer exactly once
+PASS Door sounds align to visual beats on active time, including seven pauses
+PASS Automatic reset permits Story 1 again
+PASS Automatic reset permits Story 2 again
+PASS Keyboard grabs the basket character for Story 3
+PASS Story 3 reaches approach
+PASS Keyboard release over door starts the second Story 3
+PASS A second complete chain resets without reloading
+PASS A second chain re-arms every sound once without retaining completed cues
+PASS Reset restores pumpkin, character and smoke
+PASS Reset clears pumpkin tap feedback
+PASS Reset restores original hero sprite
+
+Evidence: C:\Users\kjart\AppData\Local\Temp\halloween-story-test-2f1ec3cc708e4b85b391bcdb024699e6
+Viewport: 390x844
+PASS All fourteen runtime files decode (failed: none)
+PASS Runtime loads the compact carve clip and never requests the 61 MB original
+PASS Audio remains suspended before Enter
+PASS Enter gesture resumes the audio context
+PASS whoosh: real source starts from decoded audio
+PASS scratch: real source starts from decoded audio
+PASS knock: real source starts from decoded audio
+PASS drone: real source starts from decoded audio
+PASS puff: real source starts from decoded audio
+PASS laugh: real source starts from decoded audio
+PASS cape: real source starts from decoded audio
+PASS carve: real source starts from decoded audio
+PASS squish: real source starts from decoded audio
+PASS sparkle: real source starts from decoded audio
+PASS working: real source starts from decoded audio
+PASS creak: real source starts from decoded audio
+PASS candy: real source starts from decoded audio
+PASS cheer: real source starts from decoded audio
+PASS carve: selected excerpt is in range and contains signal (peak -1.9, RMS -22.4 dBFS)
+PASS squish: selected excerpt is in range and contains signal (peak -3.1, RMS -21.2 dBFS)
+PASS sparkle: selected excerpt is in range and contains signal (peak -24.6, RMS -45.6 dBFS)
+PASS working: selected excerpt is in range and contains signal (peak -0.1, RMS -17.5 dBFS)
+PASS knock: selected excerpt is in range and contains signal (peak -0.6, RMS -14.0 dBFS)
+PASS creak: selected excerpt is in range and contains signal (peak -2.3, RMS -13.1 dBFS)
+PASS candy: selected excerpt is in range and contains signal (peak -3.5, RMS -27.4 dBFS)
+PASS cheer: selected excerpt is in range and contains signal (peak -2.3, RMS -14.6 dBFS)
+MEASURE knock 0.05s RMS dBFS 0.00:-52.5 0.05:-25.7 0.10:-32.5 0.15:-39.4 0.20:-38.6 0.25:-8.3 0.30:-20.0 0.35:-28.5 0.40:-36.6 0.45:-39.0 0.50:-47.8 0.55:-53.2 0.60:-55.5 0.65:-59.6 0.70:-51.8 0.75:-64.8 0.80:-69.9
+MEASURE creak 0.25s RMS dBFS 0.00:-12.7 0.25:-13.6 0.50:-12.6 0.75:-14.2 1.00:-15.8 1.25:-15.4 1.50:-14.2 1.75:-20.5 2.00:-22.2
+MEASURE candy 0.25s RMS dBFS 0.00:-44.1 0.25:-33.3 0.50:-34.9 0.75:-26.9 1.00:-30.0 1.25:-39.4 1.50:-33.2 1.75:-29.2 2.00:-30.2 2.25:-26.8 2.50:-27.5 2.75:-28.5
+MEASURE cheer 0.25s RMS dBFS 0.00:-14.7 0.25:-14.5
+MEASURE working 0.25s RMS dBFS 0.00:-19.5 0.25:-15.4 0.50:-13.3 0.75:-12.4 1.00:-16.1 1.25:-20.3 1.50:-27.0 1.75:-36.8 2.00:-48.0 2.25:-60.6
+PASS Pause suspends the real audio context
+PASS An in-progress sound and its audio clock remain frozen while paused
+PASS Resume continues the existing sound without restarting it
+PASS The resumed sound reaches its normal end
+PASS A missing file is recorded and plays silently without rejecting loading
+PASS Other sounds still decode and play after a file fails
+PASS A browser without Web Audio keeps the scene silent without throwing

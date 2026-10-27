@@ -153,6 +153,50 @@ body {
 .character.is-vamp.has-basket.is-hanging {
   background-image: url('../assets/art/char-vamp-basket-hang.png');
 }
+.character.is-vamp.has-basket.is-treating {
+  background-image: url('../assets/art/char-vamp-treat.png');
+}
+.basket-candy { display: none; }
+.has-candy.is-walking .basket-candy {
+  display: block;
+  position: absolute;
+  left: var(--candy-x);
+  top: var(--candy-y);
+  width: 9%;
+  height: 5%;
+  translate: -50% -50%;
+}
+
+/* Story 3: all effect values are rendered from its paused game clock. */
+.door-open {
+  opacity: 0;
+  clip-path: polygon(46% 78.7%, 46.3% 67.6%, 47.2% 65.8%, 48.9% 64%, 51.2% 62.6%, 53.9% 61.7%, 56.6% 62.9%, 58.9% 64.4%, 60.6% 66.6%, 61.4% 68.8%, 61.1% 78.7%);
+}
+.door-hint, .door-knock {
+  left: calc(var(--u) * 41);
+  top: calc(var(--u) * 98);
+  width: calc(var(--u) * 26);
+  height: calc(var(--u) * 37);
+  opacity: 0;
+  background: radial-gradient(ellipse, transparent 42%, rgba(255, 170, 225, 0.4) 60%, rgba(160, 100, 255, 0.18) 70%, transparent 78%);
+}
+.door-knock { background: radial-gradient(ellipse, transparent 44%, rgba(255, 225, 145, 0.65) 58%, transparent 72%); }
+.door-light {
+  left: calc(var(--u) * 39);
+  top: calc(var(--u) * 113);
+  width: calc(var(--u) * 32);
+  height: calc(var(--u) * 31);
+  opacity: 0;
+  background: radial-gradient(ellipse, rgba(255, 180, 75, 0.65), transparent 72%);
+}
+.door-hand {
+  left: calc(var(--u) * 55);
+  top: calc(var(--u) * 108);
+  width: calc(var(--u) * 16);
+  aspect-ratio: 418 / 220;
+  opacity: 0;
+  background: url('../assets/art/story3-hand.png') 0 0 / 800% 100% no-repeat;
+}
 .pumpkin-stage {
   opacity: 0;
   /* Replace the whole patch, including its front pumpkins and right edge, so

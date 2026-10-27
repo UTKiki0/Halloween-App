@@ -18,19 +18,20 @@ const random = (min, max) => min + Math.random() * (max - min);
 
 export function createSpeech(stage, line) {
   const root = document.getElementById('speech');
-  if (!root) return { update() {}, render() {}, reset() {}, setLine() {} };
+  if (!root) return { update() {}, render() {}, reset() {}, setLine() {}, say() {}, clear() {} };
   const bubble = root.querySelector('.speech-bubble');
   const text = root.querySelector('.speech-text');
   const live = document.getElementById('speech-live');   // screen-reader copy of the line
 
   const state = { wait: FIRST_DELAY, shown: 0, visible: false };
+  let scripted = false;
   const stageWidthPx = () => stage.clientWidth;
 
-  function show() {
+  function show(message = line) {
     state.visible = true;
     state.shown = 0;
-    text.textContent = line;
-    if (live) live.textContent = line;
+    text.textContent = message;
+    if (live) live.textContent = message;
     root.classList.remove('is-leaving');
     root.classList.add('is-visible');
   }
@@ -43,6 +44,7 @@ export function createSpeech(stage, line) {
 
   // allowed: whether the character may speak right now (standing or walking, story not started).
   function update(dt, allowed) {
+    if (scripted) return;
     if (!allowed) {
       if (state.visible) { hide(); state.wait = Math.max(state.wait, INTERRUPTED_RETRY); }
       return;
@@ -72,6 +74,7 @@ export function createSpeech(stage, line) {
 
   // Back to the start of the schedule (used when the story is reset).
   function reset() {
+    scripted = false;
     hide();
     state.wait = FIRST_DELAY;
   }
@@ -80,5 +83,7 @@ export function createSpeech(stage, line) {
     line = nextLine;
     reset();
   }
-  return { update, render, reset, setLine };
+  function say(message) { scripted = true; show(message); }
+  function clear() { scripted = false; hide(); }
+  return { update, render, reset, setLine, say, clear };
 }

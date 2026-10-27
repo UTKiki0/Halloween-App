@@ -21,6 +21,7 @@
 import { createSpeech } from './speech.js';
 import { createCoffinStory, COFFIN_HINT } from './stories/coffin.js';
 import { createPumpkinStory, PUMPKIN_HINT } from './stories/pumpkin.js';
+import { createDoorStory, DOOR_HINT } from './stories/door.js';
 
 const FRAME_COUNT = 8;        // frames per strip (assets/art/char-*.png)
 const WALK_FPS = 8;
@@ -37,6 +38,7 @@ const BOUNCE = 0.3;           // fraction of speed kept after hitting the ground
 const BOUNCE_MIN_SPEED = 40;  // slower impacts just land
 
 const random = (min, max) => min + Math.random() * (max - min);
+const CANDY_POSITIONS = [[65, 77], [68, 81], [67, 81], [66, 75], [66, 78], [68, 81], [67, 80], [67, 75]];
 
 // options.audio: sound player from js/audio.js (optional; without it the story is silent).
 // options.scheduleFrame: defaults to requestAnimationFrame; tests pass a timer-based stand-in.
@@ -83,6 +85,8 @@ export function startCharacter(stage, hub, options = {}) {
     vx: 0,                    // sideways speed while airborne (the leap out of the coffin)
     scale: 1,                 // 1 normally; shrinks while going into the coffin
     opacity: 1,
+    frameOverride: null,       // stories can hold a specific chronological pose
+    animationRate: 1,
     target: 32,               // walk destination
     facing: 1,                // 1 = right (the walk sheets face right), -1 = left
     modeTime: 0,              // seconds in the current mode (drives the animation frame)
@@ -93,7 +97,7 @@ export function startCharacter(stage, hub, options = {}) {
   function setMode(mode) {
     state.mode = mode;
     state.modeTime = 0;
-    el.classList.toggle('is-walking', mode === 'walk');
+    el.classList.toggle('is-walking', mode === 'walk' || mode === 'finale');
     el.classList.toggle('is-hanging', mode === 'held' || mode === 'fall' || mode === 'enter' || mode === 'inside');
   }
 
@@ -102,6 +106,14 @@ export function startCharacter(stage, hub, options = {}) {
   const pumpkin = createPumpkinStory({ stage, el, state, hub, setMode, audio, speech,
     unlocked: () => story.done, groundBounds });
   let hintStory = 'coffin';
+  function resetEarlierStories() {
+    story.reset();
+    pumpkin.reset();
+    hintStory = 'coffin';
+    speech.setLine(COFFIN_HINT);
+  }
+  const door = createDoorStory({ stage, el, state, setMode, audio, speech, groundBottom, walkSpeed,
+    unlocked: () => pumpkin.done, resetEarlierStories });
 
   // ---------- grabbing ----------
   // Turn a pointer point (the fist) into where the box should be.
@@ -117,7 +129,7 @@ export function startCharacter(stage, hub, options = {}) {
   hub.addGrabbable({
     // Body area: central part of the box. Standing, skip the empty space above the head.
     hitTest(point) {
-      if (story.blocksInteraction || pumpkin.blocksInteraction || state.mode === 'enter' || state.mode === 'inside') return false;
+      if (story.blocksInteraction || pumpkin.blocksInteraction || door.blocksInteraction || state.mode === 'enter' || state.mode === 'inside') return false;
       const r = el.getBoundingClientRect();
       const s = stage.getBoundingClientRect();
       const left = ((r.left - s.left) / s.width) * 100;
@@ -138,6 +150,8 @@ export function startCharacter(stage, hub, options = {}) {
     onRelease({ cancelled = false } = {}) {
       if (!cancelled && story.canTrigger(state.lastPoint)) {
         story.start();
+      } else if (!cancelled && door.canTrigger(state.lastPoint)) {
+        door.start();
       } else {
         state.vy = 0;
         state.vx = 0;
@@ -161,6 +175,7 @@ export function startCharacter(stage, hub, options = {}) {
     const follow = 1 - Math.exp(-FOLLOW_RATE * dt);
     story.update(dt);
     pumpkin.update(dt);
+    door.update(dt);
 
     if (state.mode === 'idle') {
       state.idleLeft -= dt;
@@ -212,18 +227,18 @@ export function startCharacter(stage, hub, options = {}) {
       state.x = Math.min(maxX, Math.max(minX, state.x));
     }
     // The text hint: it speaks only while standing or walking, and only until the story has been played.
-    const nextHint = story.done ? 'pumpkin' : 'coffin';
+    const nextHint = pumpkin.done ? 'door' : story.done ? 'pumpkin' : 'coffin';
     if (hintStory !== nextHint) {
       hintStory = nextHint;
-      speech.setLine(nextHint === 'pumpkin' ? PUMPKIN_HINT : COFFIN_HINT);
+      speech.setLine(nextHint === 'door' ? DOOR_HINT : nextHint === 'pumpkin' ? PUMPKIN_HINT : COFFIN_HINT);
     }
     speech.update(dt, (state.mode === 'idle' || state.mode === 'walk')
-      && (story.done ? !pumpkin.started : !story.started));
+      && !door.ownsCharacter && (pumpkin.done || (story.done ? !pumpkin.started : !story.started)));
   }
 
   function render() {
-    const fps = { walk: WALK_FPS, idle: IDLE_FPS, held: HANG_FPS, fall: HANG_FPS, enter: HANG_FPS, inside: HANG_FPS, pickup: WALK_FPS }[state.mode];
-    const frame = Math.floor(state.modeTime * fps) % FRAME_COUNT;
+    const fps = { walk: WALK_FPS, idle: IDLE_FPS, held: HANG_FPS, fall: HANG_FPS, enter: HANG_FPS, inside: HANG_FPS, pickup: WALK_FPS, visit: IDLE_FPS, finale: WALK_FPS }[state.mode];
+    const frame = state.frameOverride ?? Math.floor(state.modeTime * fps * state.animationRate) % FRAME_COUNT;
     el.style.left = `${state.x}%`;
     // Lift is in stage-width units, so convert to pixels for the vertical translate.
     el.style.translate = `-50% ${-(state.lift / 100) * stageWidthPx()}px`;
@@ -234,10 +249,15 @@ export function startCharacter(stage, hub, options = {}) {
     el.style.scale = `${state.facing * state.scale} ${state.scale}`;
     el.style.opacity = state.opacity;
     el.style.backgroundPositionX = `${(frame / (FRAME_COUNT - 1)) * 100}%`;
+    // Keep the collected candy visible in the moving basket during the exit.
+    const candy = CANDY_POSITIONS[frame];
+    el.style.setProperty('--candy-x', `${candy[0]}%`);
+    el.style.setProperty('--candy-y', `${candy[1]}%`);
     story.render();
     pumpkin.render();
+    door.render();
     // Top of the standing head, for the speech bubble (the bubble is only shown while standing or walking).
-    speech.render(state.x, groundBottom - state.lift - standingBoxHeight * figureHeight);
+    speech.render(state.x, groundBottom - state.lift - standingBoxHeight * figureHeight * state.scale);
   }
 
   let last = performance.now();
@@ -251,11 +271,10 @@ export function startCharacter(stage, hub, options = {}) {
   scheduleFrame(loop);
 
   return { resetStory() {
-    pumpkin.reset();
+    resetEarlierStories();
+    door.reset();
+    state.x = 32;
     state.lift = state.vx = state.vy = 0;
     setMode('idle');
-    story.reset();
-    hintStory = 'coffin';
-    speech.setLine(COFFIN_HINT);
   } };
 }

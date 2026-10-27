@@ -67,10 +67,18 @@
     <!-- Hint for Story 1: a faint pulsing aura around the coffin until the story has been played
          (hidden by the stage's story-spent class; see js/character.js). -->
     <div class="layer coffin-hint" aria-hidden="true"><div class="coffin-hint-glow"></div></div>
+    <!-- Only the arched opening is replaced, preserving the surrounding house art. -->
+    <div class="layer door-hint" aria-hidden="true"></div>
+    <div class="layer door-light" aria-hidden="true"></div>
+    <img class="layer scene door-open" src="assets/art/Haunted House with an Open Door.png" alt="">
+    <div class="layer door-knock" aria-hidden="true"></div>
+    <div class="layer door-hand" aria-hidden="true"></div>
 
     <!-- Wandering character: stands in front of the scene, under the fog. Sprite strips are
          normalized from the original sheets (see research.md). Moved by js/character.js. -->
-    <div class="layer character" id="character" aria-hidden="true"></div>
+    <div class="layer character" id="character" aria-hidden="true">
+      <svg class="basket-candy" viewBox="0 0 32 18"><path d="M2 5 8 7 7 14 1 15Z" fill="#ff9d22"/><ellipse cx="13" cy="10" rx="8" ry="6" fill="#ab4bff"/><path d="m21 7 8-3-1 12-8-3Z" fill="#ff9d22"/><circle cx="15" cy="8" r="3" fill="#ffb52e"/><ellipse cx="25" cy="4" rx="5" ry="4" fill="#91d935"/></svg>
+    </div>
     <div class="layer working-smoke" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
 
     <!-- Story 1 (the vampire coffin). Hidden until the character is dropped into the coffin.

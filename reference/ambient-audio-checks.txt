@@ -1,0 +1,58 @@
+Ambient music verification — 2026-10-27
+
+Headless Microsoft Edge, 390x844, real decoders and muted Web Audio.
+41 audio checks passed. The existing 95 story checks also passed unchanged.
+Music was accelerated only in this muted test to verify crossing the buffer end.
+Developer listening, musical continuity and physical-phone review remain pending.
+
+Command:
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/run-story-checks.ps1 -Suite audio-regression
+
+PASS All fifteen runtime files decode (failed: none)
+PASS Runtime loads the compact carve clip and never requests the 61 MB original
+PASS Audio remains suspended before Enter
+PASS Loaded background music does not start before Enter
+PASS Enter gesture resumes the audio context
+PASS Enter starts exactly one repeating background music source
+PASS whoosh: real source starts from decoded audio
+PASS scratch: real source starts from decoded audio
+PASS knock: real source starts from decoded audio
+PASS drone: real source starts from decoded audio
+PASS puff: real source starts from decoded audio
+PASS laugh: real source starts from decoded audio
+PASS cape: real source starts from decoded audio
+PASS carve: real source starts from decoded audio
+PASS squish: real source starts from decoded audio
+PASS sparkle: real source starts from decoded audio
+PASS working: real source starts from decoded audio
+PASS creak: real source starts from decoded audio
+PASS candy: real source starts from decoded audio
+PASS cheer: real source starts from decoded audio
+MEASURE ambient 35.663s, peak 0.0, RMS -16.8 dBFS
+MEASURE ambient first/last 0.1s RMS -19.0 / -104.5 dBFS
+PASS carve: selected excerpt is in range and contains signal (peak -1.9, RMS -22.4 dBFS)
+PASS squish: selected excerpt is in range and contains signal (peak -3.1, RMS -21.2 dBFS)
+PASS sparkle: selected excerpt is in range and contains signal (peak -24.6, RMS -45.6 dBFS)
+PASS working: selected excerpt is in range and contains signal (peak -0.1, RMS -17.5 dBFS)
+PASS knock: selected excerpt is in range and contains signal (peak -0.6, RMS -14.0 dBFS)
+PASS creak: selected excerpt is in range and contains signal (peak -2.3, RMS -13.1 dBFS)
+PASS candy: selected excerpt is in range and contains signal (peak -3.5, RMS -27.4 dBFS)
+PASS cheer: selected excerpt is in range and contains signal (peak -2.3, RMS -14.6 dBFS)
+MEASURE knock 0.05s RMS dBFS 0.00:-52.5 0.05:-25.7 0.10:-32.5 0.15:-39.4 0.20:-38.6 0.25:-8.3 0.30:-20.0 0.35:-28.5 0.40:-36.6 0.45:-39.0 0.50:-47.8 0.55:-53.2 0.60:-55.5 0.65:-59.6 0.70:-51.8 0.75:-64.8 0.80:-69.9
+MEASURE creak 0.25s RMS dBFS 0.00:-12.7 0.25:-13.6 0.50:-12.6 0.75:-14.2 1.00:-15.8 1.25:-15.4 1.50:-14.2 1.75:-20.5 2.00:-22.2
+MEASURE candy 0.25s RMS dBFS 0.00:-44.1 0.25:-33.3 0.50:-34.9 0.75:-26.9 1.00:-30.0 1.25:-39.4 1.50:-33.2 1.75:-29.2 2.00:-30.2 2.25:-26.8 2.50:-27.5 2.75:-28.5
+MEASURE cheer 0.25s RMS dBFS 0.00:-14.7 0.25:-14.5
+MEASURE working 0.25s RMS dBFS 0.00:-19.5 0.25:-15.4 0.50:-13.3 0.75:-12.4 1.00:-16.1 1.25:-20.3 1.50:-27.0 1.75:-36.8 2.00:-48.0 2.25:-60.6
+PASS Pause suspends the real audio context
+PASS Music and an in-progress story sound share the frozen audio clock while paused
+PASS Resume continues the existing sound without restarting it
+PASS The resumed sound reaches its normal end
+PASS Music continues looping past the end of its decoded buffer
+PASS Resume and repeated Play calls keep the original music source without layering copies
+PASS Music starts after a late download when Enter has already started the scene
+PASS Music finishing a late download stays silent if the scene was paused
+PASS Play after a late download starts exactly one music source for that player
+PASS Missing music and a missing effect are recorded without rejecting loading
+PASS Missing music does not start a broken loop or affect other players
+PASS Other sounds still decode and play after a file fails
+PASS A browser without Web Audio keeps the scene silent without throwing

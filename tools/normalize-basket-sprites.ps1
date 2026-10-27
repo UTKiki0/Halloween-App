@@ -1,6 +1,6 @@
 # Deterministically cut the Developer's 4x2 sheets into the existing 418x360 frame format.
 # Originals are read only. Output names are new; reruns require -Replace to preserve edits.
-param([switch]$Replace, [ValidateSet('all','idle','walk','hang')][string]$Pose = 'all')
+param([switch]$Replace, [ValidateSet('all','idle','walk','hang','treat','hand')][string]$Pose = 'all')
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
@@ -52,9 +52,11 @@ public static class BasketSprites {
     return c.A>128 && c.R>160 && c.G>45 && c.R>c.G*1.3 && c.G>c.B*1.5;
   }
   static Bitmap Cell(Bitmap image, int frame, bool strip) {
-    int width=strip?FrameWidth:image.Width/4, height=strip?FrameHeight:image.Height/2;
-    return image.Clone(new Rectangle(strip?frame*width:(frame%4)*width,
-      strip?0:(frame/4)*height,width,height),PixelFormat.Format32bppArgb);
+    int left=strip?frame*FrameWidth:(int)Math.Round((frame%4)*image.Width/4.0);
+    int right=strip?left+FrameWidth:(int)Math.Round((frame%4+1)*image.Width/4.0);
+    int top=strip?0:(int)Math.Round((frame/4)*image.Height/2.0);
+    int bottom=strip?FrameHeight:(int)Math.Round((frame/4+1)*image.Height/2.0);
+    return image.Clone(Rectangle.FromLTRB(left,top,right,bottom),PixelFormat.Format32bppArgb);
   }
   static List<Shape> Frames(Bitmap image) {
     var regions=Regions(image,c=>c.A>32);
@@ -117,10 +119,16 @@ public static class BasketSprites {
         if(art.Right>fistX) hangScale=Math.Min(hangScale,(FrameWidth-2-anchorX)/(art.Right-fistX));
       }
       for(int i=0;i<8;i++) using(var cell=alignedGrid?Cell(input,i,false):Sprite(input,frames[i])) using(var old=Cell(original,i,true)) {
+        if(pose=="treat") foreach(var fragment in Regions(cell,c=>c.A>8)) {
+          // Thin scraps at grid boundaries are neighboring feet/cape pixels,
+          // not the detached candy or large gesture marks used by this sequence.
+          if(fragment.Count>=120) continue;
+          foreach(int point in fragment.Pixels) cell.SetPixel(point%cell.Width,point/cell.Width,Color.Transparent);
+        }
         var art=Regions(cell,c=>c.A>32)[0].Bounds;
         var head=Regions(cell,Skin)[0].Bounds;
         var oldHead=Regions(old,Skin)[0].Bounds;
-        float scale=pose=="hang"?hangScale:256f/art.Height;
+        float scale=pose=="hang"?hangScale:pose=="treat"?0.62f:256f/art.Height;
         float headX=head.Left+(head.Width-1)/2f;
         float x=FrameWidth/2f-headX*scale;
         float y=FrameHeight-(art.Bottom)*scale;
@@ -138,6 +146,8 @@ public static class BasketSprites {
         // RGB colors are preserved by normal alpha compositing; no background removal.
         var crop=Rectangle.Intersect(new Rectangle(art.X-2,art.Y-2,art.Width+4,art.Height+4),
           new Rectangle(0,0,cell.Width,cell.Height));
+        // Story 3's detached candy and gesture marks belong to the sequence too.
+        if(pose=="treat") crop=new Rectangle(0,0,cell.Width,cell.Height);
         var target=new RectangleF(i*FrameWidth+x+crop.X*scale,y+crop.Y*scale,crop.Width*scale,crop.Height*scale);
         graphics.DrawImage(cell,target,crop,GraphicsUnit.Pixel);
         Console.WriteLine(pose+" "+i+": scale="+scale.ToString("F4")+" head="+(head.Width*scale).ToString("F1")+
@@ -153,6 +163,36 @@ public static class BasketSprites {
       contact.Save(preview,ImageFormat.Png);
     }
   }
+  public static void BuildHand(string source, string destination, string preview) {
+    using(var input=new Bitmap(source))
+    using(var output=new Bitmap(FrameWidth*8,220,PixelFormat.Format32bppArgb))
+    using(var contact=new Bitmap(FrameWidth*4,440,PixelFormat.Format32bppArgb))
+    using(var draw=Graphics.FromImage(output)) using(var grid=Graphics.FromImage(contact)) {
+      draw.InterpolationMode=InterpolationMode.HighQualityBicubic;
+      grid.Clear(Color.FromArgb(255,30,24,47));
+      for(int i=0;i<8;i++) using(var cell=Cell(input,i,false)) {
+        var shapes=Regions(cell,c=>c.A>32);
+        if(shapes.Count==0 || shapes[0].Count<500) { Console.WriteLine("hand "+i+": empty"); continue; }
+        // The candy travels in the character sheet; ignore detached release candy
+        // here, including fragments crossing into the next nominal grid cell.
+        using(var hand=Sprite(cell,shapes[0])) {
+          var art=Regions(hand,c=>c.A>32)[0].Bounds;
+          int top=hand.Height,bottom=0;
+          for(int y=0;y<hand.Height;y++) for(int x=art.Left;x<Math.Min(art.Left+14,hand.Width);x++)
+            if(hand.GetPixel(x,y).A>32) { top=Math.Min(top,y); bottom=Math.Max(bottom,y); }
+          float scale=0.85f, xOffset=16-art.Left*scale, yOffset=100-(top+bottom)/2f*scale;
+          if(xOffset<0 || yOffset<0 || xOffset+hand.Width*scale>FrameWidth || yOffset+hand.Height*scale>220)
+            throw new Exception("Hand frame exceeds output: "+i);
+          draw.DrawImage(hand,new RectangleF(i*FrameWidth+xOffset,yOffset,hand.Width*scale,hand.Height*scale));
+          Console.WriteLine("hand "+i+": wrist anchored at 16,100; scale=0.85");
+        }
+      }
+      output.Save(destination,ImageFormat.Png);
+      for(int i=0;i<8;i++) grid.DrawImage(output,new Rectangle(i%4*FrameWidth,i/4*220,FrameWidth,220),
+        new Rectangle(i*FrameWidth,0,FrameWidth,220),GraphicsUnit.Pixel);
+      contact.Save(preview,ImageFormat.Png);
+    }
+  }
 }
 '@
 $artDir = Join-Path (Split-Path $PSScriptRoot -Parent) 'assets/art'
@@ -161,17 +201,25 @@ New-Item -ItemType Directory -Path $previewDir | Out-Null
 $sheets = @(
   @('idle', 'vampire-basket-idle-1772x886.png'),
   @('walk', 'exec-52c8fc0a-cd53-4890-823f-45e4ba01e7be.png'),
-  @('hang', 'exec-f67e14e2-4c18-4a6d-8f9e-73ec3127f8ca.png')
+  @('hang', 'exec-f67e14e2-4c18-4a6d-8f9e-73ec3127f8ca.png'),
+  @('treat', 'Happy vampire candy collection sequence.png'),
+  @('hand', 'Eight-frame skeleton hand candy sprite sheet.png')
 )
 foreach ($sheet in $sheets) {
   if ($Pose -ne 'all' -and $sheet[0] -ne $Pose) { continue }
-  $outputPath = Join-Path $artDir ('char-vamp-basket-' + $sheet[0] + '.png')
+  $outputName = if ($sheet[0] -eq 'treat') { 'char-vamp-treat.png' } elseif ($sheet[0] -eq 'hand') { 'story3-hand.png' } else { 'char-vamp-basket-' + $sheet[0] + '.png' }
+  $outputPath = Join-Path $artDir $outputName
   if ((Test-Path -LiteralPath $outputPath) -and !$Replace) { throw "Output exists: $outputPath. Preserve it before rerunning with -Replace." }
   if (Test-Path -LiteralPath $outputPath) {
     Copy-Item -LiteralPath $outputPath -Destination (Join-Path $previewDir ('previous-' + $sheet[0] + '.png'))
   }
-  [BasketSprites]::Build((Join-Path $artDir $sheet[1]),
-    (Join-Path $artDir ('char-vamp-' + $sheet[0] + '.png')), $outputPath, $sheet[0],
-    (Join-Path $previewDir ($sheet[0] + '.png')), ($sheet[0] -eq 'idle'))
+  if ($sheet[0] -eq 'hand') {
+    [BasketSprites]::BuildHand((Join-Path $artDir $sheet[1]), $outputPath, (Join-Path $previewDir 'hand.png'))
+  } else {
+    $referenceName = if ($sheet[0] -eq 'treat') { 'char-vamp-basket-idle.png' } else { 'char-vamp-' + $sheet[0] + '.png' }
+    [BasketSprites]::Build((Join-Path $artDir $sheet[1]),
+      (Join-Path $artDir $referenceName), $outputPath, $sheet[0],
+      (Join-Path $previewDir ($sheet[0] + '.png')), ($sheet[0] -in 'idle','treat'))
+  }
 }
 Write-Output ('Frame previews: ' + $previewDir)

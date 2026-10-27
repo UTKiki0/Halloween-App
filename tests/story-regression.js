@@ -25,6 +25,7 @@ try {
     document.body.append(stage);
     const el = stage.querySelector('#character');
     let clock = 0;
+    let activeClock = 0;
     let seed = 12345;
     let nextFrame;
     let pointerFrame;
@@ -39,7 +40,7 @@ try {
       targets.push(g); target = g; realHub.addGrabbable(g);
     } }, {
       scheduleFrame(callback) { nextFrame = callback; },
-      audio: { play(sound, settings) { cues.push({ sound, settings }); } },
+      audio: { play(sound, settings) { cues.push({ sound, settings, at: activeClock }); } },
     });
     function snapshot() {
       return {
@@ -55,6 +56,7 @@ try {
     function step(seconds) {
       for (let i = 0; i < Math.round(seconds * 60); i++) {
         clock += 1000 / 60;
+        if (!stage.classList.contains('is-paused')) activeClock += 1 / 60;
         pointerFrame(clock);
         nextFrame(clock);
         trace.push(snapshot());
@@ -77,6 +79,9 @@ try {
     drop({ x: 50, y: 80 });
     step(2);
     check(!stage.dataset.story && cues.length === 0, 'Release away from coffin does not trigger story');
+    drop({ x: 54, y: 115 });
+    step(2);
+    check(stage.dataset.story3 === 'locked', 'Door story is locked before the vampire transformation');
     drop({ x: 19, y: 122 });
     step(2);
     check(el.dataset.phase === 'rattle', 'Coffin enters rattle phase');
@@ -184,6 +189,12 @@ try {
       check(stage.dataset.story2 === 'done' && el.classList.contains('has-basket'), 'Six-second pickup ends with basket');
       check(stage.querySelectorAll('.pumpkin-stage')[3].style.opacity === '1', 'Removed-pumpkin background revealed');
       check(stage.querySelector('.working-smoke').style.opacity === '0', 'Smoke clears after pickup');
+      const pumpkinCues = cues.slice(30);
+      check(pumpkinCues.map(cue => cue.sound).join(',') === 'squish,carve,sparkle,working,puff',
+        'Story 2 plays each of its five approved cues once, in order');
+      check(Math.abs(pumpkinCues[3].at - pumpkinCues[2].at - 2.3) < 0.035
+        && Math.abs(pumpkinCues[4].at - pumpkinCues[2].at - 4.8) < 0.035,
+        'Working sound and reveal puff follow active story time through pause');
       const r = el.getBoundingClientRect(); const s = stage.getBoundingClientRect();
       check(target.hitTest({ x: (r.left + r.width / 2 - s.left) / s.width * 100,
         y: (r.bottom - r.height * 0.3 - s.top) / s.width * 100 }), 'Character becomes grabbable after pickup');
@@ -226,6 +237,135 @@ try {
       check(getComputedStyle(el).backgroundImage.includes('char-vamp-basket-hang.png'), 'Falling retains basket hang pose');
       step(2);
       check(!el.classList.contains('is-hanging') && el.classList.contains('has-basket'), 'Landing returns to basket ground poses');
+
+      check(stage.dataset.story3 === 'ready' && stage.querySelector('.door-hint').style.opacity === '1',
+        'Only after basket pickup does the door story and hint unlock');
+      function pointerAt(type, point) {
+        const s = stage.getBoundingClientRect();
+        stage.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 9, pointerType: 'touch', button: 0,
+          clientX: s.left + point.x / 100 * s.width, clientY: s.top + point.y / 100 * s.width }));
+      }
+      function bodyPoint() {
+        const r = el.getBoundingClientRect(); const s = stage.getBoundingClientRect();
+        return { x: (r.left + r.width / 2 - s.left) / s.width * 100,
+          y: (r.bottom - r.height * 0.3 - s.top) / s.width * 100 };
+      }
+      pointerAt('pointerdown', bodyPoint());
+      pointerAt('pointermove', { x: 54, y: 115 });
+      pointerAt('pointercancel', { x: 54, y: 115 });
+      step(2);
+      check(stage.dataset.story3 === 'ready', 'Cancelled door drop does not trigger Story 3');
+      pointerAt('pointerdown', bodyPoint());
+      pointerAt('pointermove', { x: 54, y: 115 });
+      step(0.2);
+      const story3Start = clock;
+      const story3ActiveStart = activeClock;
+      const story3Cues = cues.length;
+      let pausedStory3 = 0;
+      pointerAt('pointerup', { x: 54, y: 115 });
+      function reachPhase(expected) {
+        for (let i = 0; i < 700 && stage.dataset.story3 !== expected; i++) step(1 / 60);
+        check(stage.dataset.story3 === expected, `Story 3 reaches ${expected}`);
+      }
+      function freezeStory3() {
+        stage.classList.add('is-paused');
+        const frame = JSON.stringify({ actor: el.outerHTML, effects: [...stage.querySelectorAll('.door-open, .door-hand, .door-light, .door-knock')].map(n => n.style.cssText),
+          speech: stage.querySelector('#speech').outerHTML, cues: cues.length });
+        step(0.5);
+        pausedStory3 += 0.5;
+        check(JSON.stringify({ actor: el.outerHTML, effects: [...stage.querySelectorAll('.door-open, .door-hand, .door-light, .door-knock')].map(n => n.style.cssText),
+          speech: stage.querySelector('#speech').outerHTML, cues: cues.length }) === frame, `Pause freezes Story 3 ${stage.dataset.story3}`);
+        stage.classList.remove('is-paused');
+      }
+      reachPhase('approach');
+      check(!target.hitTest(bodyPoint()), 'Story 3 blocks grabbing immediately');
+      freezeStory3();
+      reachPhase('knock');
+      check(stage.querySelector('#speech-live').textContent === 'Trick or treat!', 'Story 3 speech is visible and announced');
+      const doorstepFeet = (el.getBoundingClientRect().bottom - stage.getBoundingClientRect().top) / stage.clientWidth * 100;
+      check(Math.abs(doorstepFeet - 131) < 0.2 && el.style.scale.split(' ').every(value => Number(value) === 0.7),
+        'Vampire stands on the doorstep at the intended depth');
+      if (preview === 'story3-knock') return trace;
+      freezeStory3();
+      reachPhase('offer');
+      check(stage.querySelector('.door-open').style.opacity === '1' && stage.querySelector('.door-hand').style.opacity === '1',
+        'The door opens and the skeleton offers candy');
+      if (preview === 'story3-offer') { step(0.3); return trace; }
+      freezeStory3();
+      reachPhase('candy');
+      check(getComputedStyle(el).backgroundImage.includes('char-vamp-treat.png'), 'Candy handoff uses the supplied chronological character sheet');
+      if (preview === 'story3-candy') { step(0.45); return trace; }
+      freezeStory3();
+      reachPhase('receive');
+      check(Math.abs(parseFloat(el.style.backgroundPositionX) - 3 / 7 * 100) < 0.01, 'Candy reaches the full-basket frame');
+      reachPhase('cheer');
+      if (preview === 'story3-cheer') { step(0.4); return trace; }
+      freezeStory3();
+      reachPhase('down');
+      check(stage.querySelector('.door-open').style.opacity === '0' && stage.querySelector('.door-hand').style.opacity === '0',
+        'Door closes and hand clears before returning to ground');
+      reachPhase('exit');
+      check(el.classList.contains('is-walking') && el.classList.contains('has-candy') && el.classList.contains('is-vamp'),
+        'Vampire walks out carrying the collected candy');
+      if (preview === 'story3-exit') { step(0.5); return trace; }
+      freezeStory3();
+      reachPhase('return');
+      check(el.getBoundingClientRect().left >= stage.getBoundingClientRect().right, 'Costume reset happens with the entire character frame off-screen');
+      check(!el.classList.contains('is-vamp') && !el.classList.contains('has-basket') && stage.dataset.pumpkin === '0',
+        'Original character and pumpkin are restored together off-screen');
+      check(!target.hitTest(bodyPoint()), 'Return walk remains locked against grabbing');
+      if (preview === 'story3-return') { step(0.8); return trace; }
+      freezeStory3();
+      reachPhase('locked');
+      const wholeSequenceSeconds = (clock - story3Start) / 1000 - pausedStory3;
+      check(wholeSequenceSeconds >= 5 && wholeSequenceSeconds <= 10,
+        `Story 3 including exit and return lasts 5-10 active seconds (measured ${wholeSequenceSeconds.toFixed(3)}s)`);
+      check(stage.dataset.cycles === '1' && el.style.left === '32%' && !stage.classList.contains('story-spent'),
+        'Hero walks back to the original position and the coffin hint re-arms once');
+      check(target.hitTest(bodyPoint()), 'Interaction resumes after the hero returns');
+      const doorCues = cues.slice(story3Cues);
+      check(doorCues.map(cue => cue.sound).join(',') === 'knock,knock,knock,creak,candy,cheer',
+        'Story 3 plays three knocks, door creak, candy rustle and cheer exactly once');
+      check(doorCues.every((cue, index) => Math.abs(cue.at - story3ActiveStart
+        - [0.86, 1.14, 1.42, 1.7, 3.75, 4.575][index]) < 0.035),
+        'Door sounds align to visual beats on active time, including seven pauses');
+      if (preview === 'story3-reset') return trace;
+
+      // Play the whole chain again without a reload, with the keyboard door trigger.
+      const replayCues = cues.length;
+      drop({ x: 19, y: 122 }); step(8);
+      check(stage.dataset.story === 'done', 'Automatic reset permits Story 1 again');
+      tapPumpkin(); step(0.9); tapPumpkin(); step(0.9); tapPumpkin();
+      function moveKeyboardTo(point) {
+        stage.focus();
+        for (const axis of ['x', 'y']) {
+          for (let i = 0; i < 150; i++) {
+            const value = axis === 'x' ? parseFloat(cursor.style.left || '50')
+              : parseFloat(cursor.style.top || '62') / 100 * realHub.stageHeightUnits();
+            const difference = point[axis] - value;
+            if (Math.abs(difference) < 1) break;
+            const arrow = axis === 'x' ? (difference > 0 ? 'ArrowRight' : 'ArrowLeft')
+              : (difference > 0 ? 'ArrowDown' : 'ArrowUp');
+            key('keydown', arrow); step(1 / 60); key('keyup', arrow);
+          }
+          step(1 / 60);
+        }
+      }
+      moveKeyboardTo({ x: 71, y: 157 });
+      step(5.7);
+      check(stage.dataset.story2 === 'done', 'Automatic reset permits Story 2 again');
+      key('keydown', ' '); step(1 / 60);
+      check(el.classList.contains('is-hanging'), 'Keyboard grabs the basket character for Story 3');
+      moveKeyboardTo({ x: 54, y: 115 });
+      key('keyup', ' ');
+      reachPhase('approach');
+      check(stage.dataset.cycles === '1', 'Keyboard release over door starts the second Story 3');
+      step(10);
+      check(stage.dataset.cycles === '2' && !el.classList.contains('is-vamp'), 'A second complete chain resets without reloading');
+      check(cues.slice(replayCues).length === 26
+        && cues.slice(replayCues + 15, replayCues + 20).map(cue => cue.sound).join(',') === 'squish,carve,sparkle,working,puff'
+        && cues.slice(replayCues + 20).map(cue => cue.sound).join(',') === 'knock,knock,knock,creak,candy,cheer',
+        'A second chain re-arms every sound once without retaining completed cues');
       character.resetStory();
       check(stage.dataset.pumpkin === '0' && !el.classList.contains('has-basket')
         && stage.querySelector('.working-smoke').style.opacity === '0', 'Reset restores pumpkin, character and smoke');
@@ -250,6 +390,9 @@ try {
 }
 if (preview && document.body.dataset.result === 'pass') {
   document.getElementById('start')?.remove();
+  // The simulated story clock doesn't advance real CSS pop-in time. At these
+  // selected later story moments, show the settled bubble for the still capture.
+  document.querySelector('.speech-bubble').style.animation = 'none';
   document.getElementById('stage').classList.add('is-paused');
   results.remove();
 } else {

@@ -64,7 +64,7 @@ Reference the brief's fixed requirements rather than copying them. Specify your 
 ### Checkpoint 3: start screen and Play/Pause (DRAFT, pending Developer review)
 
 - **Start screen** (title "The Jack-o'-Land", draft tagline, large **Enter** button) covers the dimmed, paused scene. Nothing moves until Enter; Enter is focused on load.
-- **Enter** hides the start screen, reveals Play/Pause, moves focus to it, and starts motion. Audio unlock will hook in here once sounds are chosen.
+- **Enter** hides the start screen, reveals Play/Pause, focuses the interactive stage, and starts motion and the shared audio context, including background music. Reduced motion starts the scene paused as described below.
 - **Reduced motion:** if the device prefers it, the start screen says so and the scene starts still after Enter; the player can turn motion on with Play/Pause. (Decision: honor the preference automatically, no separate toggle.)
 - **Play/Pause:** one round icon button, top left (moved from bottom center at the Developer's request; this frees the bottom 15% of the scene), at least 48px. Toggles `is-paused` on the stage via a single `setPlaying()` in `js/main.js`; later systems (audio, timers, interaction, stories) subscribe through `onPlayStateChange`. Icon swaps between pause and play; `aria-label` says "Pause" or "Play".
 - Checks: nothing animates before Enter; Enter starts motion (unless reduced); pause freezes, resume continues; tap targets at least 44px; keyboard Tab/Enter/Space reachable; text readable.
@@ -72,7 +72,7 @@ Reference the brief's fixed requirements rather than copying them. Specify your 
 ### Checkpoint 4: wandering character (DRAFT, pending Developer review)
 
 - A caped character stands in front of the scene near the bottom (under the fog). It idles 1.5-4 s, picks a random spot at least 15% of the stage width away, walks there (facing the direction of travel), and repeats.
-- It never leaves the screen: its whole frame box is kept inside the stage (x from 17% to 83% of stage width at the current size).
+- Normal wandering stays on screen: its whole frame box is kept inside the stage (x from 17% to 83% of stage width at the current size). Story 3's approved exit/return finale deliberately walks it out of view while interaction is locked.
 - Size: about as tall as the house door (Developer request). One setting, `--char-w` in `css/styles.css` (frame box width, now 48% of stage width: the box grew when the hang art and the vampire were added, and the figure is the same size as when the box was 34%); `character.js` reads it, and walk speed scales with it (0.6 character-widths per second) so stride stays matched.
 - It follows the shared pause rule: `js/character.js` reads the stage's `is-paused` class every frame, so Play/Pause, the start screen and reduced motion (scene starts paused) all control it, and it resumes from the same spot.
 - Provisional, tune by eye: walk speed, frame rates (walk 8 fps, idle 5 fps), vertical position (4% above the bottom).
@@ -112,7 +112,7 @@ Sources, licenses and trim reasoning are in `research.md`; credits in `CREDITS.m
 - **Cues on the story clock (seconds from release):** 0 whoosh as the character shrinks in; 0.9 the restless growl and the rising drone start under the rattle; nine wooden knocks from 1.3 to 4.7 s that speed up and get louder with the rattle; 4.8 the smoke poof with the flash; 4.85 the vampire laugh; 4.9 the cape swoop. 15 sounds per run.
 - **One audio switch:** all sounds go through one Web Audio context (`js/audio.js`). Sound is allowed by the Enter tap (the context is resumed inside that click, as mobile browsers require). Play/Pause suspends and resumes the whole context, so every sound mid-play freezes and continues exactly where it stopped, in step with the picture; no new sounds start while paused.
 - **Failure behavior:** if a sound cannot load or decode, the scene stays silent for that sound and everything else still works.
-- **Not yet specified:** a looping ambient background sound, a landing sound, sounds for the grab and drop, and any volume or mute control.
+- **Not yet specified:** a landing sound, sounds for the grab and drop, and any volume or mute control. Background music is specified below.
 - Checks: audio context starts suspended and runs after Enter; every cue fires once per run with the right trim points and timing; pause suspends the context and its clock stops; no cue fires during pause; resume continues; a second drop plays nothing; a reset allows all cues again.
 
 ### Checkpoint 8: Story 1 hint glow (DRAFT, pending Developer review)
@@ -139,7 +139,7 @@ Sources, licenses and trim reasoning are in `research.md`; credits in `CREDITS.m
 2. **Story 2, the jack-o'-lantern basket:** tap the big pumpkin three times to carve it into a basket; the vampire then carries it off.
 3. **Story 3, trick-or-treating:** drag the basket-carrying vampire to the house door; a skeleton hand fills the basket with candy.
 
-Each story unlocks only after the one before it (the vampire carries the basket; the basket collects the candy). Only the next story's hints show. When Story 3 ends, everything resets together (hero form, pumpkin back, door closed, hints restart), so the cycle can be played again. Each story's sequence is 5-10 s; other interaction is locked while it plays. Triggers differ on purpose: drag-and-drop, then three taps, then drag-and-drop to a new place.
+Each story unlocks only after the one before it (the vampire carries the basket; the basket collects the candy). Only the next story's hints show. After collecting candy in Story 3, the vampire walks fully off the right edge. Everything resets together while the character is out of view (hero form, pumpkin back, door closed, hints re-armed); the original hero walks back from that edge to its initial x 32 position, then interaction and the initial hint schedule resume. Each story's sequence is 5-10 s; Story 3 includes the exit and return in that time. Other scene interaction is locked throughout. Triggers differ on purpose: drag-and-drop, then three taps, then drag-and-drop to a new place.
 
 Measurements used below come from `assets/art/fg-scene.png` (941x1672, drawn at 94% of the stage width, 0.0999 stage units per art pixel; x offset 3 units). Reference crops for making art are in `reference/`: `story2-pumpkin-crop.png` and `story3-door-crop.png` (plus `-guides` versions with the target outlined).
 
@@ -183,27 +183,40 @@ All three supplied character sheets already have alpha transparency. The colored
 
 ### Checkpoint 11: Story 3, trick-or-treating (DRAFT, pending Developer review)
 
-**Decisions (Developer):** drag the character to the door; a skeleton hand with a bowl answers.
+**Decisions (Developer-approved):** drag the character to the door; the supplied skeleton hand offers one wrapped candy, replacing the earlier bowl idea. Afterward the vampire walks off-screen, the cycle resets invisibly, and the original hero walks back. Sound work follows this visual/mechanical checkpoint.
 
 - **Requires:** Story 2 done (the character is carrying the basket).
 - **Trigger:** release the character over the door, about x 44-64, y 97-134 stage units (the door opening is art x 442-585, y 1000-1310, which is x 47-61, y 100-131 units).
-- **Sequence (about 8 s):** the vampire hops up to the doorstep (head at about x 54, feet at about y 131; scaled to about 0.7 so it looks further back) and turns to face the player; three knocks and the line "Trick or treat!" in the speech bubble; the door creaks open (ajar, then open, with warm light spilling out); a skeleton hand with a bowl reaches out and tips candy, which falls into the basket; the vampire cheers with the basket full while the hand waves and retracts; the door closes; the vampire hops back down to the ground.
-- **After Story 3:** the cycle reset described above (timing open: right after, or after a short finale).
+- **Sequence (about 9.73 s including exit and return):** 0-0.8 s, hop to the doorstep (head center x 54, feet y 131, scale 0.7); 0.8-1.7 s, three visual knock pulses and "Trick or treat!" in the speech bubble/live region; 1.7-2.3 s, reveal the supplied ajar-door art with a warm light spill; 2.3-3.1 s, skeleton hand reaches out with the candy; 3.1-3.9 s, the supplied character frames show the candy falling into the basket; 3.9-4.3 s, show the full basket; 4.3-5.4 s, crouch and cheer while the hand retracts and the door closes; 5.4-6.2 s, hop back to the ground.
+- **Exit and return:** from 6.2 s, walk right at 1.5 times the normal walk speed, with matching frame rate and visible candy in the basket. At x 126 the entire frame is outside the stage; reset the earlier stories and remove the vampire costume/basket there. The original hero walks left from that edge back to x 32, then idles and resumes normal wandering. The exit/return positions are functions of elapsed story time, so pause cannot advance the reset. Grabbing remains locked until the return is complete. The initial hint waits about 6 s after the return.
 - **Hints:** appear only once Story 2 is done: a faint glow around the door and a speech line (draft wording: "Somebody has their porch light on...").
-- **Art needed:**
+- **Supplied art and preparation** (originals unchanged in `assets/art/`):
 
 | Asset | Spec |
 |---|---|
-| Door ajar and door fully open (2 images) | 230x360, aligned to `reference/story3-door-crop.png`; drawn inside the arched opening (masked in code), with warm light from within |
-| Skeleton hand with a bowl | 8-frame sheet: reaches out, tips the bowl, waves, retracts; emerges from the dark inside the doorway; friendly cartoon style, no gore |
-| Candy | one sheet of 5-6 small sprites (wrapped candies, lollipop, candy corn), about 64x64 each |
-| Vampire front-facing with the basket: asking, then cheering with a full basket | 1-2 sheets, same character scale |
+| `Haunted House with an Open Door.png` | Full-scene image, shown only inside the arched doorway; the rest of the scene stays unchanged |
+| `Eight-frame skeleton hand candy sprite sheet.png` | Derived as `story3-hand.png`: 8 frames of 418x220, aligned by wrist; empty entry/exit frames retained; detached release candy omitted because the character sheet supplies its fall |
+| `Happy vampire candy collection sequence.png` | Derived as `char-vamp-treat.png`: 8 frames of 418x360, chronological empty-basket, falling-candy, receiving and cheering poses; 0.62 scale matches the existing head size |
+| Exit candy | Small code-native SVG candies follow the moving basket until the off-screen reset |
 
-- **Checks:** release over the door starts the sequence only when Story 2 is done; the character is on the doorstep, facing front, at the right size; knocks, creak, candy and cheer cues fire on the story clock; candy visibly lands in the basket; the door closes cleanly; the character is back on the ground; interaction locked during the sequence; sequence 5-10 s; pause freezes everything; reset restores the closed door; keyboard path works.
+- **Checks:** the door stays locked before Story 2; a cancelled drop does not trigger it; release over the door starts it with mouse/touch or the keyboard pointer; character stands on the doorstep at the intended size; exact spoken/live-region line; hand offers the candy and the character frames show it landing in the basket; hand retracts and door closes before the ground return; vampire walks out with candy; no costume/scene reset until the entire character is off-screen; original hero walks back to x 32 before grabbing resumes; all hints/forms/patch stages reset together; pause freezes every phase including exit and return; complete sequence 5-10 active seconds; a second whole chain works without reloading. Sound cues follow the same paused clock and re-arm once per cycle.
 
-### Sounds still to find (CC0 from Freesound, verified per sound page as before)
+### Stories 2 and 3 sound (Developer-approved selections, 2026-10-27)
 
-Story 2: knife carving and scraping, a pumpkin squish and scoop, a magic sparkle for the lighting, and a playful working-smoke sound for the concealed pickup and reveal. No lid tumble or visible lift cue is needed. Story 3: a door creak (a candidate from the earlier search is "Creaking Wood" by Breviceps, CC0), candy wrappers and a candy rustle, a cheer. We already have a wooden knock for the door.
+Story 2: short excerpts from "PUMPKIN_CARVING:STABBING.WAV" by dansotak for carving; "Cartoon Splat" by Breviceps for hollowing; "cartoon_wink_magic_sparkle.wav" by MLaudio for lighting; "Cartoon Magic Transition" by qubodup for the working smoke. Reuse the existing puff when the smoke clears. No lid tumble or visible lift cue is needed.
+
+Story 3: reuse the existing wooden knock for the three knocks; "Creaking Wood" by Breviceps for opening the door; a brief rustle from "Opening a Candy Wrapper" by danlucaz for the handoff; "funny yay.wav" by Reitanna for the celebration.
+
+Each selected sound's Freesound page lists CC0; links and source durations are in `research.md`. The Developer supplied all seven originals in `assets/sound/`. The runtime uses a 0.7 s, 67,244-byte carving excerpt prepared from source time 10.9 s; it never loads the 61 MB carving original. Other originals are decoded directly, with excerpts and fades selected at playback. Source files remain unchanged.
+
+Story 2 cues: squish on tap 1, carving on tap 2, sparkle on tap 3, working sound at pickup time 2.3 s for 2.5 s, and puff at 4.8 s. Story 3 cues: knocks at 0.86/1.14/1.42 s; 0.6 s creak at 1.7 s; 0.35 s candy rustle at 3.75 s; cheer at 4.575 s during the jump. Cues fire once on active story time; the shared audio context freezes sounds already playing during pause. Levels and final trim points still need Developer listening review.
+
+### Ambient background music (Developer-selected, 2026-10-27)
+
+- **Asset:** `381531__dominictreis__playful-music.mp3` in `assets/sound/`, chosen from the playful shortlist. The original remains unchanged; its Freesound page lists CC0 (source in `research.md`, credited in `CREDITS.md`).
+- **Playback:** one looping source in the existing audio context, at gain 0.12 under the story effects, fading in over 1.5 s when first started. It starts after Enter, or once its download finishes if the scene is already playing. With reduced motion it waits for Play. A failed download leaves the existing story effects available.
+- **Pause and reset:** Pause suspends the same context as story audio, retaining the music's playhead. Resume continues it; repeated Play calls cannot add copies. Story completion and off-screen resets leave that source running.
+- **Checks:** silence before Enter; normal looping past the source end; pause/resume without restart or duplication; late download while playing or paused; missing-file fallback. Final volume and how the musical ending joins the beginning need Developer listening review.
 
 **Open (provisional or undecided)**
 

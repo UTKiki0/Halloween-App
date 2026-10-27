@@ -34,7 +34,6 @@ enterButton.addEventListener('click', () => {
   playPauseButton.hidden = false;
   setPlaying(!prefersReducedMotion);   // reduced motion: scene starts still
   stage.focus({ preventScroll: true }); // keyboard users land on the scene: arrows move the pointer, Space grabs
-  // Later: unlock audio here. Browsers only allow sound after a user gesture like this tap.
 });
 
 playPauseButton.addEventListener('click', () => {
@@ -47,8 +46,8 @@ const pointerHub = createPointerHub(stage);
 // every sound pauses and continues with the picture. (setPlaying runs inside the click handlers.)
 const audio = createAudio();
 onPlayStateChange((isPlaying) => audio.setPlaying(isPlaying));
-// Story 1 plays once. When all the stories are finished, call character.resetStory() to turn the
-// character back to normal and re-arm it so the cycle can start again.
+// Story 3 walks the character off-screen, resets the stories there, then returns
+// the original hero. resetStory() remains available for a manual reset in tests.
 const character = startCharacter(stage, pointerHub, { audio });
 
 enterButton.focus();

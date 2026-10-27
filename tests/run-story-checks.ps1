@@ -1,13 +1,15 @@
 param(
-  [ValidateSet('', 'base', 'tap', 'hollow', 'carved', 'lit', 'smoke', 'basket', 'walk', 'hang')][string]$Preview = '',
+  [ValidateSet('', 'base', 'tap', 'hollow', 'carved', 'lit', 'smoke', 'basket', 'walk', 'hang',
+    'story3-knock', 'story3-offer', 'story3-candy', 'story3-cheer', 'story3-exit', 'story3-return', 'story3-reset')][string]$Preview = '',
   [int]$Width = 390,
-  [int]$Height = 844
+  [int]$Height = 844,
+  [ValidateSet('story-regression', 'audio-regression')][string]$Suite = 'story-regression'
 )
 $ErrorActionPreference = 'Stop'
 $edgeExe = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'
 $evidenceDir = Join-Path ([IO.Path]::GetTempPath()) ('halloween-story-test-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $evidenceDir | Out-Null
-$testPath = Join-Path $PSScriptRoot 'story-regression.html'
+$testPath = Join-Path $PSScriptRoot ($Suite + '.html')
 $testUrl = ([uri]$testPath).AbsoluteUri
 if ($Preview) { $testUrl += '?preview=' + $Preview }
 $portReservation = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
@@ -66,6 +68,12 @@ try {
   Invoke-BrowserCommand 'Page.navigate' @{ url = $testUrl } | Out-Null
   $status = ''
   for ($attempt = 0; $attempt -lt 200; $attempt++) {
+    if ($Suite -eq 'audio-regression') {
+      # Supply the browser user gesture that real Enter supplies in the app.
+      Invoke-BrowserCommand 'Runtime.evaluate' @{
+        expression = 'document.querySelector("#start-audio")?.click()'; userGesture = $true
+      } | Out-Null
+    }
     $reply = Invoke-BrowserCommand 'Runtime.evaluate' @{ expression = 'document.body?.dataset.result || ""' }
     $status = $reply.result.result.value
     if ($status -in 'pass', 'fail') { break }

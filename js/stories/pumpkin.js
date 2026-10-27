@@ -42,9 +42,10 @@ export function createPumpkinStory({ stage, el, state, hub, setMode, audio, unlo
     if (feedback > 0) { queued = Math.min(3 - taps, queued + 1); return; }
     taps += 1;
     feedback = TAP_SECONDS;
-    // Existing verified CC0 cues give this mechanics checkpoint audible feedback.
-    // Dedicated carving/sparkle/working sounds are the separate sound checkpoint.
-    audio?.play(taps === 3 ? 'puff' : 'knock', { gain: 0.45, rate: 0.9 + taps * 0.15 });
+    if (taps === 1) audio?.play('squish', { gain: 0.5, fadeOut: 0.04 });
+    else if (taps === 2) audio?.play('carve', { gain: 0.75 });
+    // This source peaks around -25 dBFS, much quieter than the other recordings.
+    else audio?.play('sparkle', { gain: 5, fadeOut: 0.12 });
     if (taps === 3) {
       started = true;
       originX = state.x;
@@ -84,7 +85,7 @@ export function createPumpkinStory({ stage, el, state, hub, setMode, audio, unlo
     el.classList.toggle('is-walking', clock >= TAP_SECONDS && clock < SMOKE_START);
     if (clock >= SMOKE_START && !smokeSound) {
       smokeSound = true;
-      audio?.play('whoosh', { gain: 0.65 });
+      audio?.play('working', { gain: 0.35, duration: 2.5, fadeIn: 0.04, fadeOut: 0.2 });
     }
     if (clock >= SWAP_AT && !swapped) {
       swapped = true;
