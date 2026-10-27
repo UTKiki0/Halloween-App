@@ -1,5 +1,9 @@
 // Story 3 and the exit/return finale share the scene's paused game clock.
-export const DOOR_HINT = 'Somebody has their porch light on...';
+export const DOOR_HINTS = [
+  'Somebody has their porch light on…',
+  'Maybe they have candy for my basket!',
+  'Drag me onto the house door and let go!',
+];
 const PORCH = { x: 54, feet: 131, scale: 0.7 };
 const END = { hop: 0.8, knock: 1.7, open: 2.3, offer: 3.1, catch: 3.9,
   receive: 4.3, cheer: 5.4, home: 6.2 };
@@ -175,7 +179,7 @@ export function createDoorStory({ stage, el, state, setMode, audio, speech, unlo
     speech.clear();
     render();
   }
-  return { id: 'door', hint: DOOR_HINT, canTrigger, start, update, render, reset,
+  return { id: 'door', hints: DOOR_HINTS, canTrigger, start, update, render, reset,
     get blocksInteraction() { return Boolean(phase); },
     get ownsCharacter() { return Boolean(phase); } };
 }

@@ -19,9 +19,9 @@
 // there is one place to change them. Positions here are in "stage units" (percent of stage width).
 
 import { createSpeech } from './speech.js';
-import { createCoffinStory, COFFIN_HINT } from './stories/coffin.js';
-import { createPumpkinStory, PUMPKIN_HINT } from './stories/pumpkin.js';
-import { createDoorStory, DOOR_HINT } from './stories/door.js';
+import { createCoffinStory, COFFIN_HINTS } from './stories/coffin.js';
+import { createPumpkinStory, PUMPKIN_HINTS } from './stories/pumpkin.js';
+import { createDoorStory, DOOR_HINTS } from './stories/door.js';
 
 const FRAME_COUNT = 8;        // frames per strip (assets/art/char-*.png)
 const WALK_FPS = 8;
@@ -69,7 +69,7 @@ export function startCharacter(stage, hub, options = {}) {
   // Where the box bottom sits when standing (measured once, with no lift applied).
   const groundBottom = ((el.getBoundingClientRect().bottom - stage.getBoundingClientRect().top) / stageWidthPx()) * 100;
   const standingBoxHeight = boxHeight();
-  const speech = createSpeech(stage, COFFIN_HINT);
+  const speech = createSpeech(stage, COFFIN_HINTS);
 
   // While going into or coming out of the coffin the figure scales around its fist, not its feet.
   const fistOrigin = `${(0.5 + holdX) * 100}% ${holdY * 100}%`;
@@ -110,7 +110,7 @@ export function startCharacter(stage, hub, options = {}) {
     story.reset();
     pumpkin.reset();
     hintStory = 'coffin';
-    speech.setLine(COFFIN_HINT);
+    speech.setHints(COFFIN_HINTS);
   }
   const door = createDoorStory({ stage, el, state, setMode, audio, speech, groundBottom, walkSpeed,
     unlocked: () => pumpkin.done, resetEarlierStories });
@@ -230,7 +230,7 @@ export function startCharacter(stage, hub, options = {}) {
     const nextHint = pumpkin.done ? 'door' : story.done ? 'pumpkin' : 'coffin';
     if (hintStory !== nextHint) {
       hintStory = nextHint;
-      speech.setLine(nextHint === 'door' ? DOOR_HINT : nextHint === 'pumpkin' ? PUMPKIN_HINT : COFFIN_HINT);
+      speech.setHints(nextHint === 'door' ? DOOR_HINTS : nextHint === 'pumpkin' ? PUMPKIN_HINTS : COFFIN_HINTS);
     }
     speech.update(dt, (state.mode === 'idle' || state.mode === 'walk')
       && !door.ownsCharacter && (pumpkin.done || (story.done ? !pumpkin.started : !story.started)));

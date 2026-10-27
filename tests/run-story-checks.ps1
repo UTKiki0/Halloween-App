@@ -1,9 +1,10 @@
 param(
   [ValidateSet('', 'base', 'tap', 'hollow', 'carved', 'lit', 'smoke', 'basket', 'walk', 'hang',
-    'story3-knock', 'story3-offer', 'story3-candy', 'story3-cheer', 'story3-exit', 'story3-return', 'story3-reset')][string]$Preview = '',
+    'story3-knock', 'story3-offer', 'story3-candy', 'story3-cheer', 'story3-exit', 'story3-return', 'story3-reset',
+    'hint-coffin', 'hint-pumpkin', 'hint-door')][string]$Preview = '',
   [int]$Width = 390,
   [int]$Height = 844,
-  [ValidateSet('story-regression', 'audio-regression')][string]$Suite = 'story-regression'
+  [ValidateSet('story-regression', 'audio-regression', 'hint-regression')][string]$Suite = 'story-regression'
 )
 $ErrorActionPreference = 'Stop'
 $edgeExe = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'

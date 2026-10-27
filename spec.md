@@ -120,18 +120,26 @@ Sources, licenses and trim reasoning are in `research.md`; credits in `CREDITS.m
 - **Hint (Developer request):** until Story 1 has been played, a faint aura glows around the coffin. It is a soft pink-and-purple ring just outside the coffin's edge (clear in the middle, so the coffin art is untouched), pulsing slowly (3.6 s per cycle, between 30% and 75% strength). It uses the same colors as the story's own glow, so the story reads as an escalation of the hint.
 - **When it shows:** from the start until the story begins; it fades out (0.5 s) the moment the story starts and stays off, including after the story ends. `resetStory()` brings it back with the rest of the cycle.
 - **Motion rules:** the pulse follows the shared pause rule, so while paused, and when the device prefers reduced motion (the scene starts paused), it holds still at its faint level instead of pulsing. It never blocks taps.
-- **Does not meet the brief's hint requirement on its own.** The brief asks for progressive text hints over time that hint without telling. Open: what the text hints say, when each appears (for example after N seconds without progress), and whether the glow itself should strengthen over time.
+- **Text progression:** the glow accompanies the three-level speech hints specified in checkpoint 9. Its strength does not change with hint level.
 - Checks: glow shows before the story, centered on the coffin; goes away when the story starts and stays away; returns after a reset; pointer-events none.
 
-### Checkpoint 9: Story 1 text hint, the character's speech bubble (DRAFT, pending Developer review)
+### Checkpoint 9: progressive speech hints (Developer-approved, 2026-10-27)
 
-- **Hint (Developer request):** now and then the character shows a speech bubble saying exactly "I really want a vampire outfit for Halloween". It hints at the goal without saying what to do.
-- **Schedule (provisional, tune by eye):** the first bubble appears 6 s into play; each stays up 4.5 s (with a 0.25 s fade-out); then a random 14-22 s gap before the next. Timing runs on game time, so pausing freezes it.
-- **When it speaks:** only while standing or walking and only until Story 1 has started. A bubble is removed at once if the character is picked up or the story starts; after an interruption it waits at least 4 s before the next one. After the story it never speaks again; `resetStory()` restarts the schedule from the 6 s mark.
+- **Goal:** each unlocked story progresses from a wish, to a clearer clue, to an explicit instruction. The Developer approved ending with the character telling the player what to do.
+- **Schedule:** first hint at about 6 s, clearer hint at 25 s, direct instruction at 45 s. Afterward repeat only the direct instruction every 25 s, measured start to start. Count available exploration time while the character is standing or walking; paused time, holding/falling and story sequences do not count. Each bubble remains for 4.5 s, including a 0.25 s fade-out.
+- **Interruption:** picking up the character hides the bubble immediately and freezes its hint clock. After release/landing, an interrupted line retries after four available seconds instead of skipping a level. Escalation advances after a line has finished displaying. A delayed line keeps at least four seconds of separation before the next level.
+- **Progress and reset:** only the next unlocked story's hints appear. Changing stories starts a fresh six-second countdown with that story's subtle line. The first two pumpkin taps preserve its current progression. Starting a story hides its hints. The automatic off-screen reset and hero return start the coffin hints from the beginning. Scripted "Trick or treat!" speech stays separate from hint timing.
 - **Look:** a cream bubble with a dark purple outline, bold rounded text (about 16 px on a 390 px-wide phone, wrapping to about three lines), a tail pointing at the head, popping in with a small bounce. The bubble sits above the head, follows the character, stays at least 1.5 stage units inside both screen edges (the tail still points at the head), and never blocks taps. Under reduced motion it appears without the bounce.
-- **Accessibility:** the bubble is visual only; the same line is announced politely through a screen-reader live region while the bubble is up.
-- **Not yet decided:** whether the hint gets more direct the longer the player goes without progress (the brief asks for progressive hints), and whether other lines are needed for Stories 2 and 3.
-- Checks: exact line and live region; first bubble near 6 s; 14-22 s gaps; 4.5 s on screen; always fully on screen and above the head; frozen while paused; hidden at once when picked up; hidden when the story starts and never returns afterward; returns about 6 s after a reset.
+- **Accessibility:** the same displayed line is announced politely through a screen-reader live region.
+
+| Story | Subtle hint, 6 s | Clearer hint, 25 s | Instruction, 45 s and repeats |
+|---|---|---|---|
+| Coffin | I really want a vampire outfit for Halloween. | Maybe that coffin could help with my costume… | Drag me onto the coffin and let go! |
+| Pumpkin | I need something to carry my candy. | That big pumpkin could make a good basket… | Tap the big pumpkin until it turns into my basket! |
+| Door | Somebody has their porch light on… | Maybe they have candy for my basket! | Drag me onto the house door and let go! |
+
+- **Implementation:** each story owns its three lines; `js/speech.js` owns one shared schedule; `js/character.js` selects the active story. No changes to story triggers or sound cues.
+- **Checks:** all three levels and final repeats at the approved times; full display duration; no hint-clock advancement while unavailable or paused; interrupted-line retry; fresh progression on story changes and complete reset; scripted speech unaffected; matching live-region text; all nine bubbles fit at both screen edges on 390x844, 360x640 and 430x932. Developer real-time/phone review remains open.
 
 ### The three-story chain (DRAFT, pending Developer review)
 
@@ -153,7 +161,7 @@ Measurements used below come from `assets/art/fg-scene.png` (941x1672, drawn at 
   2. Tap 2: the face is carved, with chips flying.
   3. Tap 3: the inside lights up and a handle appears: it is now the basket. Progress is kept between taps however long the player waits.
 - **Sequence after tap 3 (target about 6 s, acceptance 5-10 s):** a sparkle; the vampire dashes over (existing vampire walk sheet, sped up, fixed 1.5 s); a churning ball of "working" smoke covers both the vampire and the pumpkin for about 2 s. While both are obscured, the big pumpkin is removed using the fill-in background and the character swaps to the basket-carrying sheets. Smoke clears to reveal the vampire carrying the basket and the big pumpkin gone; after a brief reveal, wandering resumes. Other interaction is locked from tap 3 until the sequence ends; Play/Pause freezes the approach, smoke, swap timing and reveal together.
-- **Hints:** appear only once Story 1 is done: a faint glow around the pumpkin (same style as the coffin's) and a speech line from the character (draft wording: "I need something to carry my candy" - hints without telling).
+- **Hints:** appear only once Story 1 is done: a faint pumpkin glow (same style as the coffin's) and the three pumpkin lines from checkpoint 9. Partial tap progress retains the current hint level.
 - **Art integration (Developer-approved revision):** use the supplied full-scene pumpkin variants with the same sizing and positioning as the base scene. Clip all four variants to the whole pumpkin patch, including its front pumpkins and right edge (`inset(72% 0 5% 50%)`), instead of a tight outline around the big pumpkin. This prevents remnants of the original pumpkin showing beyond the replacement. Smaller pumpkins remain visible as part of each replacement image.
 - **Color and boundary cleanup (Developer-approved):** each variant has a static sRGB gamma correction measured against unchanged ground and stone in the base scene; the PNGs remain unchanged. Feather the unchanged collar of the same full-patch region: left 50-62%, top 72-74.5%, bottom 91-95%, right 94-100% of the scene image. The big pumpkin and handle remain inside full-opacity coverage. Color grading stays constant through tap feedback and pause. Inspect all four variants against the base scene, including the settled background after pickup, at the three specified phone sizes.
 
@@ -189,7 +197,7 @@ All three supplied character sheets already have alpha transparency. The colored
 - **Trigger:** release the character over the door, about x 44-64, y 97-134 stage units (the door opening is art x 442-585, y 1000-1310, which is x 47-61, y 100-131 units).
 - **Sequence (about 9.73 s including exit and return):** 0-0.8 s, hop to the doorstep (head center x 54, feet y 131, scale 0.7); 0.8-1.7 s, three visual knock pulses and "Trick or treat!" in the speech bubble/live region; 1.7-2.3 s, reveal the supplied ajar-door art with a warm light spill; 2.3-3.1 s, skeleton hand reaches out with the candy; 3.1-3.9 s, the supplied character frames show the candy falling into the basket; 3.9-4.3 s, show the full basket; 4.3-5.4 s, crouch and cheer while the hand retracts and the door closes; 5.4-6.2 s, hop back to the ground.
 - **Exit and return:** from 6.2 s, walk right at 1.5 times the normal walk speed, with matching frame rate and visible candy in the basket. At x 126 the entire frame is outside the stage; reset the earlier stories and remove the vampire costume/basket there. The original hero walks left from that edge back to x 32, then idles and resumes normal wandering. The exit/return positions are functions of elapsed story time, so pause cannot advance the reset. Grabbing remains locked until the return is complete. The initial hint waits about 6 s after the return.
-- **Hints:** appear only once Story 2 is done: a faint glow around the door and a speech line (draft wording: "Somebody has their porch light on...").
+- **Hints:** appear only once Story 2 is done: a faint door glow and the three door lines from checkpoint 9.
 - **Supplied art and preparation** (originals unchanged in `assets/art/`):
 
 | Asset | Spec |

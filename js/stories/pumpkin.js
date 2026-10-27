@@ -12,7 +12,11 @@ const SMOKE_START = TAP_SECONDS + APPROACH_SECONDS;
 const SWAP_AT = SMOKE_START + 1;
 const SMOKE_END = SMOKE_START + 2.5; // fade in/out around two seconds of dense smoke
 const END_AT = 6;
-export const PUMPKIN_HINT = 'I need something to carry my candy';
+export const PUMPKIN_HINTS = [
+  'I need something to carry my candy.',
+  'That big pumpkin could make a good basket…',
+  'Tap the big pumpkin until it turns into my basket!',
+];
 const clamp = value => Math.min(1, Math.max(0, value));
 
 export function createPumpkinStory({ stage, el, state, hub, setMode, audio, unlocked,
@@ -132,7 +136,7 @@ export function createPumpkinStory({ stage, el, state, hub, setMode, audio, unlo
     el.classList.remove('has-basket');
     render();
   }
-  return { id: 'pumpkin', hint: PUMPKIN_HINT, update, render, reset,
+  return { id: 'pumpkin', hints: PUMPKIN_HINTS, update, render, reset,
     get started() { return started; }, get done() { return done; },
     get blocksInteraction() { return playing(); } };
 }

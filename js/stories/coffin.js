@@ -1,7 +1,11 @@
 // Story contract: canTrigger, start, update, render, reset, onLand, plus phase/status getters.
 // Character movement stays in character.js; each story owns its timeline, cues, effects and hint.
 
-export const COFFIN_HINT = 'I really want a vampire outfit for Halloween';
+export const COFFIN_HINTS = [
+  'I really want a vampire outfit for Halloween.',
+  'Maybe that coffin could help with my costume…',
+  'Drag me onto the coffin and let go!',
+];
 
 // ---------- Story 1: the vampire coffin ----------
 // Coffin geometry in stage units, measured from assets/art/fg-scene.png (scene drawn at 94% width,
@@ -180,7 +184,7 @@ export function createCoffinStory({ stage, el, state, setMode, audio, speech,
 
   return {
     id: 'coffin',
-    hint: COFFIN_HINT,
+    hints: COFFIN_HINTS,
     get phase() { return current.phase; },
     get started() { return current.started; },
     get done() { return current.done; },

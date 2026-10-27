@@ -1,33 +1,29 @@
-// The character's speech bubble: pops up now and then with a line of text, above its head.
-//
-// This is the Story 1 text hint: it hints at the goal in the character's own words without
-// saying what to do. The owner (character.js) decides WHEN speaking is allowed and WHERE the
-// head is; this module only handles timing and drawing.
+// The character's speech bubble progresses from a wish to a clue to an instruction.
+// character.js chooses the current story's lines and when the character may speak.
 //
 // Timing runs on game time: `update(dt, allowed)` is only called while the scene is playing, so
 // pausing freezes the bubble and its timers together with everything else.
 
-const FIRST_DELAY = 6;          // seconds of play before the first bubble
-const INTERVAL = [14, 22];      // random gap between bubbles
+const HINT_TIMES = [6, 25, 45]; // seconds available for exploration within this story
+const REPEAT_INTERVAL = 25;    // repeat the final instruction, measured start to start
 const VISIBLE_SECONDS = 4.5;    // how long a bubble stays up
 const LEAVE_SECONDS = 0.25;     // fade-out at the end
 const INTERRUPTED_RETRY = 4;    // after an interruption, wait at least this long before speaking again
 const EDGE_MARGIN = 1.5;        // keep the bubble this far (stage units) from the screen edges
 
-const random = (min, max) => min + Math.random() * (max - min);
-
-export function createSpeech(stage, line) {
+export function createSpeech(stage, hints) {
   const root = document.getElementById('speech');
-  if (!root) return { update() {}, render() {}, reset() {}, setLine() {}, say() {}, clear() {} };
+  if (!root) return { update() {}, render() {}, reset() {}, setHints() {}, say() {}, clear() {} };
   const bubble = root.querySelector('.speech-bubble');
   const text = root.querySelector('.speech-text');
   const live = document.getElementById('speech-live');   // screen-reader copy of the line
 
-  const state = { wait: FIRST_DELAY, shown: 0, visible: false };
+  const state = { elapsed: 0, nextAt: HINT_TIMES[0], index: 0, startedAt: 0,
+    retry: 0, shown: 0, visible: false };
   let scripted = false;
   const stageWidthPx = () => stage.clientWidth;
 
-  function show(message = line) {
+  function show(message) {
     state.visible = true;
     state.shown = 0;
     text.textContent = message;
@@ -46,16 +42,27 @@ export function createSpeech(stage, line) {
   function update(dt, allowed) {
     if (scripted) return;
     if (!allowed) {
-      if (state.visible) { hide(); state.wait = Math.max(state.wait, INTERRUPTED_RETRY); }
+      // A grab hides the bubble and freezes progression. Retry the interrupted
+      // line after release so a brief glimpse doesn't skip a whole hint level.
+      if (state.visible) { hide(); state.retry = INTERRUPTED_RETRY; }
       return;
     }
+    state.elapsed += dt;
+    state.retry = Math.max(0, state.retry - dt);
     if (state.visible) {
       state.shown += dt;
       if (state.shown >= VISIBLE_SECONDS - LEAVE_SECONDS) root.classList.add('is-leaving');
-      if (state.shown >= VISIBLE_SECONDS) { hide(); state.wait = random(...INTERVAL); }
-    } else {
-      state.wait -= dt;
-      if (state.wait <= 0) show();
+      if (state.shown >= VISIBLE_SECONDS) {
+        hide();
+        const finishedIndex = state.index;
+        state.index = Math.min(state.index + 1, hints.length - 1);
+        const nextAt = finishedIndex < hints.length - 1
+          ? HINT_TIMES[state.index] : state.startedAt + REPEAT_INTERVAL;
+        state.nextAt = Math.max(nextAt, state.elapsed + INTERRUPTED_RETRY);
+      }
+    } else if (state.elapsed >= state.nextAt && state.retry === 0) {
+      state.startedAt = state.elapsed;
+      show(hints[state.index]);
     }
   }
 
@@ -76,14 +83,15 @@ export function createSpeech(stage, line) {
   function reset() {
     scripted = false;
     hide();
-    state.wait = FIRST_DELAY;
+    state.elapsed = state.index = state.retry = state.shown = state.startedAt = 0;
+    state.nextAt = HINT_TIMES[0];
   }
 
-  function setLine(nextLine) {
-    line = nextLine;
+  function setHints(nextHints) {
+    hints = nextHints;
     reset();
   }
   function say(message) { scripted = true; show(message); }
   function clear() { scripted = false; hide(); }
-  return { update, render, reset, setLine, say, clear };
+  return { update, render, reset, setHints, say, clear };
 }

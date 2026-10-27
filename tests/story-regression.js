@@ -68,14 +68,23 @@ try {
       target.onMove(point);
       target.onRelease();
     }
+    function waitForHint(message) {
+      for (let i = 0; i < 6000; i++) {
+        if (stage.querySelector('#speech').classList.contains('is-visible')
+          && stage.querySelector('.speech-text').textContent === message) return;
+        step(1 / 60);
+      }
+      throw new Error(`Hint did not appear: ${message}`);
+    }
     step(1);
     check(!el.classList.contains('is-vamp') && cues.length === 0, 'No story before Enter');
     const pumpkin = targets.length > 1 ? targets[0] : null;
     if (pumpkin) check(!pumpkin.hitTest({ x: 74, y: 134 }), 'Pumpkin locked before Story 1');
     stage.classList.remove('is-paused');
     step(7);
-    check(stage.querySelector('.speech-text').textContent === 'I really want a vampire outfit for Halloween',
+    check(stage.querySelector('.speech-text').textContent === 'I really want a vampire outfit for Halloween.',
       'Original hint appears after six seconds');
+    if (preview === 'hint-coffin') { waitForHint('Drag me onto the coffin and let go!'); return trace; }
     drop({ x: 50, y: 80 });
     step(2);
     check(!stage.dataset.story && cues.length === 0, 'Release away from coffin does not trigger story');
@@ -107,6 +116,9 @@ try {
     check(cues.length === 30 && stage.dataset.story === 'done', 'Reset allows a complete replay');
     if (pumpkin) {
       check(pumpkin.hitTest({ x: 74, y: 134 }), 'Pumpkin unlocks after Story 1');
+      if (preview === 'hint-pumpkin') {
+        waitForHint('Tap the big pumpkin until it turns into my basket!'); return trace;
+      }
       if (preview === 'base') {
         stage.querySelector('.pumpkin-hint').style.opacity = '0';
         return trace;
@@ -240,6 +252,7 @@ try {
 
       check(stage.dataset.story3 === 'ready' && stage.querySelector('.door-hint').style.opacity === '1',
         'Only after basket pickup does the door story and hint unlock');
+      if (preview === 'hint-door') { waitForHint('Drag me onto the house door and let go!'); return trace; }
       function pointerAt(type, point) {
         const s = stage.getBoundingClientRect();
         stage.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 9, pointerType: 'touch', button: 0,
@@ -371,6 +384,35 @@ try {
         && stage.querySelector('.working-smoke').style.opacity === '0', 'Reset restores pumpkin, character and smoke');
       check(tapGlow.style.opacity === '0', 'Reset clears pumpkin tap feedback');
       check(!getComputedStyle(el).backgroundImage.includes('basket'), 'Reset restores original hero sprite');
+
+      // Exercise escalation through the real character/story owner as well as the
+      // focused speech suite, including unlocking each new set and the full reset.
+      waitForHint('Drag me onto the coffin and let go!');
+      check(stage.dataset.story3 === 'locked', 'Coffin instruction appears while later stories remain locked');
+      stage.classList.add('is-paused');
+      const frozenInstruction = stage.querySelector('#speech').outerHTML;
+      step(30);
+      check(stage.querySelector('#speech').outerHTML === frozenInstruction,
+        'A visible final instruction remains frozen throughout a long scene pause');
+      stage.classList.remove('is-paused');
+      drop({ x: 19, y: 122 }); step(8);
+      waitForHint('I need something to carry my candy.');
+      check(stage.dataset.story2 === 'ready', 'Story 2 unlocks with its own first hint rather than the previous instruction');
+      waitForHint('Tap the big pumpkin until it turns into my basket!');
+      check(stage.dataset.pumpkin === '0', 'Unsolved pumpkin escalates to its own direct instruction');
+      tapPumpkin(); step(0.9);
+      check(stage.querySelector('.speech-text').textContent === 'Tap the big pumpkin until it turns into my basket!',
+        'Partial pumpkin progress retains its current hint level');
+      tapPumpkin(); step(0.9); tapPumpkin(); step(7);
+      waitForHint('Somebody has their porch light on…');
+      check(stage.dataset.story3 === 'ready', 'Story 3 unlocks with its own first hint');
+      waitForHint('Drag me onto the house door and let go!');
+      check(stage.querySelector('#speech-live').textContent === 'Drag me onto the house door and let go!',
+        'Door instruction is also announced in the live region');
+      drop({ x: 54, y: 115 }); step(10);
+      waitForHint('I really want a vampire outfit for Halloween.');
+      check(stage.dataset.cycles === '3' && !el.classList.contains('is-vamp'),
+        'Automatic exit/return reset starts the new cycle with the subtle coffin hint');
     }
     return trace;
   }
