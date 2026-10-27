@@ -133,6 +133,78 @@ Sources, licenses and trim reasoning are in `research.md`; credits in `CREDITS.m
 - **Not yet decided:** whether the hint gets more direct the longer the player goes without progress (the brief asks for progressive hints), and whether other lines are needed for Stories 2 and 3.
 - Checks: exact line and live region; first bubble near 6 s; 14-22 s gaps; 4.5 s on screen; always fully on screen and above the head; frozen while paused; hidden at once when picked up; hidden when the story starts and never returns afterward; returns about 6 s after a reset.
 
+### The three-story chain (DRAFT, pending Developer review)
+
+1. **Story 1 (built):** drag the character into the coffin; it becomes the vampire.
+2. **Story 2, the jack-o'-lantern basket:** tap the big pumpkin three times to carve it into a basket; the vampire then carries it off.
+3. **Story 3, trick-or-treating:** drag the basket-carrying vampire to the house door; a skeleton hand fills the basket with candy.
+
+Each story unlocks only after the one before it (the vampire carries the basket; the basket collects the candy). Only the next story's hints show. When Story 3 ends, everything resets together (hero form, pumpkin back, door closed, hints restart), so the cycle can be played again. Each story's sequence is 5-10 s; other interaction is locked while it plays. Triggers differ on purpose: drag-and-drop, then three taps, then drag-and-drop to a new place.
+
+Measurements used below come from `assets/art/fg-scene.png` (941x1672, drawn at 94% of the stage width, 0.0999 stage units per art pixel; x offset 3 units). Reference crops for making art are in `reference/`: `story2-pumpkin-crop.png` and `story3-door-crop.png` (plus `-guides` versions with the target outlined).
+
+### Checkpoint 10: Story 2, the jack-o'-lantern basket (DRAFT, pending Developer review)
+
+**Decisions (Developer, smoke revision approved 2026-10-26):** the big pumpkin leaves the patch; the basket is baked into new character sheets. Working smoke hides the pickup and character swap. Separate lid and crouch-and-lift sprites are not needed.
+
+- **Trigger:** three taps on the big pumpkin (mouse, touch, or Space on the keyboard pointer). Tap target: the pumpkin's upper visible body, about x 63-85, y 125-144 stage units (art x 598-822, y 1250-1440). It sits underneath the character, so the character stays grabbable if it stands in front.
+- **Progress (shown by the pumpkin itself, each tap with its own sound and feedback, a 0.8 s animation during which the next tap waits):** tap feedback is a short amber ring around the big pumpkin, fading and expanding on game time. The fence, stones and smaller pumpkins keep a constant color; the whole replacement image does not brighten. Play/Pause freezes the ring, and reset clears it.
+  1. Tap 1: the top is cut, revealing the dark hollow; no flying lid.
+  2. Tap 2: the face is carved, with chips flying.
+  3. Tap 3: the inside lights up and a handle appears: it is now the basket. Progress is kept between taps however long the player waits.
+- **Sequence after tap 3 (target about 6 s, acceptance 5-10 s):** a sparkle; the vampire dashes over (existing vampire walk sheet, sped up, fixed 1.5 s); a churning ball of "working" smoke covers both the vampire and the pumpkin for about 2 s. While both are obscured, the big pumpkin is removed using the fill-in background and the character swaps to the basket-carrying sheets. Smoke clears to reveal the vampire carrying the basket and the big pumpkin gone; after a brief reveal, wandering resumes. Other interaction is locked from tap 3 until the sequence ends; Play/Pause freezes the approach, smoke, swap timing and reveal together.
+- **Hints:** appear only once Story 1 is done: a faint glow around the pumpkin (same style as the coffin's) and a speech line from the character (draft wording: "I need something to carry my candy" - hints without telling).
+- **Art integration (Developer-approved revision):** use the supplied full-scene pumpkin variants with the same sizing and positioning as the base scene. Clip all four variants to the whole pumpkin patch, including its front pumpkins and right edge (`inset(72% 0 5% 50%)`), instead of a tight outline around the big pumpkin. This prevents remnants of the original pumpkin showing beyond the replacement. Smaller pumpkins remain visible as part of each replacement image.
+- **Color and boundary cleanup (Developer-approved):** each variant has a static sRGB gamma correction measured against unchanged ground and stone in the base scene; the PNGs remain unchanged. Feather the unchanged collar of the same full-patch region: left 50-62%, top 72-74.5%, bottom 91-95%, right 94-100% of the scene image. The big pumpkin and handle remain inside full-opacity coverage. Color grading stays constant through tap feedback and pause. Inspect all four variants against the base scene, including the settled background after pickup, at the three specified phone sizes.
+
+| Asset | Spec |
+|---|---|
+| Pumpkin stage A: top cut, lid off, dark hollow | Full-scene source, displayed only over the whole patch |
+| Pumpkin stage B: face carved | Same scene sizing and patch clip |
+| Pumpkin stage C: lit from inside, with a handle | Same scene sizing and patch clip; keep the handle visible |
+| Fill-in background | Same scene sizing and patch clip; the big pumpkin is absent and smaller pumpkins remain |
+| Vampire walk, idle and hang while carrying the basket | Derived 8-frame strips, each frame 418x360, using the existing shared character geometry |
+
+**Supplied sources in `assets/art/`:**
+
+| Role | Source |
+|---|---|
+| Stage A, hollow top | `Carving-ready pumpkin at haunted mansion.png` |
+| Stage B, carved face | `Pumpkin cluster outside a haunted mansion.png` |
+| Stage C, basket with handle | `Jack-o'-lantern with seamless green handle.png` |
+| Big pumpkin removed | `Haunted mansion with glowing pumpkins.png` |
+| Basket walk sheet | `exec-52c8fc0a-cd53-4890-823f-45e4ba01e7be.png` |
+| Basket idle sheet | `vampire-basket-idle-1772x886.png` |
+| Basket hang sheet | `exec-f67e14e2-4c18-4a6d-8f9e-73ec3127f8ca.png` |
+
+All three supplied character sheets already have alpha transparency. The colored RGB values behind transparent pixels in walk/hang are not a visible background and must not be removed. `tools/normalize-basket-sprites.ps1` preserves the artwork and produces `char-vamp-basket-idle.png`, `char-vamp-basket-walk.png`, and `char-vamp-basket-hang.png`. Idle/walk figures are 256 px tall, anchored at the feet and head center, matching the current vampire. The Developer chose a slightly smaller hang animation to fit the existing frame; all eight hang frames use one scale (0.785), anchored at the shared fist hotspot. The original sources remain unchanged. Frame previews and browser screenshots are Agent-checked; Developer real-time and phone review remain pending.
+
+- **Checks:** three taps advance exactly one stage each; taps during a stage's animation wait; progress persists; the sequence starts only after tap 3; the character can still be grabbed before tap 3 and not during the sequence; the pumpkin art lines up with the scene (no visible seam or double pumpkin); smoke covers both the character and pumpkin for about 2 s and conceals both swaps; the reveal shows the basket-carrying vampire and no big pumpkin; the fill-in hides the old pumpkin completely and leaves the front pumpkins untouched; the character ends carrying the basket in walk, idle and hang states; sequence 5-10 s; pause freezes approach, smoke and reveal timing; keyboard path works; reset restores the pumpkin and clears smoke.
+
+### Checkpoint 11: Story 3, trick-or-treating (DRAFT, pending Developer review)
+
+**Decisions (Developer):** drag the character to the door; a skeleton hand with a bowl answers.
+
+- **Requires:** Story 2 done (the character is carrying the basket).
+- **Trigger:** release the character over the door, about x 44-64, y 97-134 stage units (the door opening is art x 442-585, y 1000-1310, which is x 47-61, y 100-131 units).
+- **Sequence (about 8 s):** the vampire hops up to the doorstep (head at about x 54, feet at about y 131; scaled to about 0.7 so it looks further back) and turns to face the player; three knocks and the line "Trick or treat!" in the speech bubble; the door creaks open (ajar, then open, with warm light spilling out); a skeleton hand with a bowl reaches out and tips candy, which falls into the basket; the vampire cheers with the basket full while the hand waves and retracts; the door closes; the vampire hops back down to the ground.
+- **After Story 3:** the cycle reset described above (timing open: right after, or after a short finale).
+- **Hints:** appear only once Story 2 is done: a faint glow around the door and a speech line (draft wording: "Somebody has their porch light on...").
+- **Art needed:**
+
+| Asset | Spec |
+|---|---|
+| Door ajar and door fully open (2 images) | 230x360, aligned to `reference/story3-door-crop.png`; drawn inside the arched opening (masked in code), with warm light from within |
+| Skeleton hand with a bowl | 8-frame sheet: reaches out, tips the bowl, waves, retracts; emerges from the dark inside the doorway; friendly cartoon style, no gore |
+| Candy | one sheet of 5-6 small sprites (wrapped candies, lollipop, candy corn), about 64x64 each |
+| Vampire front-facing with the basket: asking, then cheering with a full basket | 1-2 sheets, same character scale |
+
+- **Checks:** release over the door starts the sequence only when Story 2 is done; the character is on the doorstep, facing front, at the right size; knocks, creak, candy and cheer cues fire on the story clock; candy visibly lands in the basket; the door closes cleanly; the character is back on the ground; interaction locked during the sequence; sequence 5-10 s; pause freezes everything; reset restores the closed door; keyboard path works.
+
+### Sounds still to find (CC0 from Freesound, verified per sound page as before)
+
+Story 2: knife carving and scraping, a pumpkin squish and scoop, a magic sparkle for the lighting, and a playful working-smoke sound for the concealed pickup and reveal. No lid tumble or visible lift cue is needed. Story 3: a door creak (a candidate from the earlier search is "Creaking Wood" by Breviceps, CC0), candy wrappers and a candy rustle, a cheer. We already have a wooden knock for the door.
+
 **Open (provisional or undecided)**
 
 - Exact moon and cloud placement and sizes, fog opacity: tune by eye.

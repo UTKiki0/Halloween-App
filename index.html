@@ -13,7 +13,7 @@
        it paused if the device prefers reduced motion. -->
   <main class="stage is-paused" id="stage" tabindex="0" role="group" aria-label="Scene" aria-describedby="scene-help">
     <!-- The art is decorative; this text describes the scene for screen readers. -->
-    <p class="sr-only" id="scene-help">A cartoon haunted house at night with a vampire coffin and a pumpkin patch under a full moon. A caped character wanders in front. Keyboard: use the arrow keys to move a pointer, hold Space to pick the character up, and release Space to drop it.</p>
+    <p class="sr-only" id="scene-help">A cartoon haunted house at night with a vampire coffin and a pumpkin patch under a full moon. A caped character wanders in front. Keyboard: use the arrow keys to move a pointer, tap Space to tap an object, hold Space to pick the character up, and release Space to drop it.</p>
 
     <!-- Layers, back to front. -->
     <img class="layer sky" src="assets/art/bg-sky.png" alt="">
@@ -24,6 +24,46 @@
     <div class="layer cloud cloud-small"><img src="assets/art/fx-cloud-small.png" alt=""></div>
     <div class="layer ground"></div>
     <img class="layer scene" src="assets/art/fg-scene.png" alt="">
+    <!-- Match the supplied variants to the base scene without changing their PNGs.
+         Gamma is measured on unchanged ground/stone; sRGB keeps that measurement consistent. -->
+    <svg class="color-grades" aria-hidden="true" focusable="false" width="0" height="0">
+      <defs>
+        <filter id="pumpkin-grade-hollow" color-interpolation-filters="sRGB">
+          <feComponentTransfer>
+            <feFuncR type="gamma" exponent="1.201"/>
+            <feFuncG type="gamma" exponent="1.117"/>
+            <feFuncB type="gamma" exponent="1.096"/>
+          </feComponentTransfer>
+        </filter>
+        <filter id="pumpkin-grade-carved" color-interpolation-filters="sRGB">
+          <feComponentTransfer>
+            <feFuncR type="gamma" exponent="1.217"/>
+            <feFuncG type="gamma" exponent="1.126"/>
+            <feFuncB type="gamma" exponent="1.086"/>
+          </feComponentTransfer>
+        </filter>
+        <filter id="pumpkin-grade-lit" color-interpolation-filters="sRGB">
+          <feComponentTransfer>
+            <feFuncR type="gamma" exponent="1.356"/>
+            <feFuncG type="gamma" exponent="1.166"/>
+            <feFuncB type="gamma" exponent="1.062"/>
+          </feComponentTransfer>
+        </filter>
+        <filter id="pumpkin-grade-empty" color-interpolation-filters="sRGB">
+          <feComponentTransfer>
+            <feFuncR type="gamma" exponent="1.335"/>
+            <feFuncG type="gamma" exponent="1.149"/>
+            <feFuncB type="gamma" exponent="1.045"/>
+          </feComponentTransfer>
+        </filter>
+      </defs>
+    </svg>
+    <img class="layer scene pumpkin-stage pumpkin-hollow" src="assets/art/Carving-ready pumpkin at haunted mansion.png" alt="">
+    <img class="layer scene pumpkin-stage pumpkin-carved" src="assets/art/Pumpkin cluster outside a haunted mansion.png" alt="">
+    <img class="layer scene pumpkin-stage pumpkin-lit" src="assets/art/Jack-o'-lantern with seamless green handle.png" alt="">
+    <img class="layer scene pumpkin-stage pumpkin-empty" src="assets/art/Haunted mansion with glowing pumpkins.png" alt="">
+    <div class="layer pumpkin-tap" aria-hidden="true"></div>
+    <div class="layer pumpkin-hint" aria-hidden="true"><div class="coffin-hint-glow"></div></div>
     <!-- Hint for Story 1: a faint pulsing aura around the coffin until the story has been played
          (hidden by the stage's story-spent class; see js/character.js). -->
     <div class="layer coffin-hint" aria-hidden="true"><div class="coffin-hint-glow"></div></div>
@@ -31,6 +71,7 @@
     <!-- Wandering character: stands in front of the scene, under the fog. Sprite strips are
          normalized from the original sheets (see research.md). Moved by js/character.js. -->
     <div class="layer character" id="character" aria-hidden="true"></div>
+    <div class="layer working-smoke" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
 
     <!-- Story 1 (the vampire coffin). Hidden until the character is dropped into the coffin.
          The coffin copy is the scene art clipped to the coffin and drawn in front of the character,

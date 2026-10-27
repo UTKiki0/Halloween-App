@@ -106,7 +106,7 @@ body {
 }
 
 /* Character: an 8-frame strip, one frame visible at a time (js/character.js sets left, translate,
-   scale and background-position-x). All six strips (hero and vampire, walk/idle/hang) share one
+   scale and background-position-x). All nine strips (hero, vampire and basket vampire) share one
    418x360 frame box with the head centered, so the box is centered on `left` and mirrored around
    the head with `scale`. Walk/idle stand with feet at the box bottom; the hang strip hangs from
    its fist at the top.
@@ -142,6 +142,69 @@ body {
 .character.is-vamp { background-image: url("../assets/art/char-vamp-idle.png"); }
 .character.is-vamp.is-walking { background-image: url("../assets/art/char-vamp-walk.png"); }
 .character.is-vamp.is-hanging { background-image: url("../assets/art/char-vamp-hang.png"); }
+
+/* Story 2 uses the same frame box, scale and pose rules as the other forms. */
+.character.is-vamp.has-basket {
+  background-image: url('../assets/art/char-vamp-basket-idle.png');
+}
+.character.is-vamp.has-basket.is-walking {
+  background-image: url('../assets/art/char-vamp-basket-walk.png');
+}
+.character.is-vamp.has-basket.is-hanging {
+  background-image: url('../assets/art/char-vamp-basket-hang.png');
+}
+.pumpkin-stage {
+  opacity: 0;
+  /* Replace the whole patch, including its front pumpkins and right edge, so
+     the original large pumpkin cannot protrude past the replacement. */
+  clip-path: inset(72% 0 5% 50%);
+  /* Blend only the unchanged collar. Coverage reaches full opacity before the
+     big pumpkin/handle, so its old silhouette cannot show through the new art. */
+  --patch-mask-y: linear-gradient(to bottom, transparent 72%, #000 74.5%, #000 91%, transparent 95%);
+  --patch-mask-x: linear-gradient(to right, transparent 50%, #000 62%, #000 94%, transparent 100%);
+  -webkit-mask-image: var(--patch-mask-y), var(--patch-mask-x);
+  mask-image: var(--patch-mask-y), var(--patch-mask-x);
+}
+.color-grades { position: absolute; pointer-events: none; }
+.pumpkin-hollow { filter: url('#pumpkin-grade-hollow'); }
+.pumpkin-carved { filter: url('#pumpkin-grade-carved'); }
+.pumpkin-lit { filter: url('#pumpkin-grade-lit'); }
+.pumpkin-empty { filter: url('#pumpkin-grade-empty'); }
+.pumpkin-tap {
+  left: calc(var(--u) * 59);
+  top: calc(var(--u) * 120);
+  width: calc(var(--u) * 32);
+  height: calc(var(--u) * 36);
+  opacity: 0;
+  background: radial-gradient(ellipse, transparent 42%, rgba(255, 230, 170, 0.65) 57%, rgba(255, 190, 75, 0.4) 68%, transparent 78%);
+}
+.pumpkin-hint { inset: 0; opacity: 0; }
+.pumpkin-hint .coffin-hint-glow {
+  left: calc(var(--u) * 54);
+  top: calc(var(--u) * 119);
+  width: calc(var(--u) * 40);
+  height: calc(var(--u) * 40);
+}
+.working-smoke {
+  left: 43%;
+  top: calc(var(--u) * 119);
+  width: 57%;
+  height: calc(var(--u) * 55);
+  opacity: 0;
+  /* Dense center conceals the art swaps; soft edges keep the smoke in the scene. */
+  background: radial-gradient(ellipse, #d1bfdf 0%, #b6a0c8 53%, transparent 72%);
+}
+.working-smoke i {
+  position: absolute;
+  width: 65%; height: 65%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #e6daee 15%, #b8a1cc 50%, transparent 71%);
+}
+.working-smoke i:nth-child(2) { left: 30%; top: 5%; }
+.working-smoke i:nth-child(3) { left: 5%; top: 30%; }
+.working-smoke i:nth-child(4) { left: 35%; top: 35%; }
+.working-smoke i:nth-child(5) { left: 18%; top: 18%; }
+.working-smoke i:nth-child(6) { left: 40%; top: 20%; }
 
 /* Speech bubble. #speech is a zero-size anchor at the top of the character's head (js/speech.js sets
    left/top); the bubble sits above it, centered, with a tail pointing down at the head. */

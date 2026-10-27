@@ -45,12 +45,13 @@ export function createPointerHub(stage, scheduleFrame = requestAnimationFrame) {
     return false;
   }
   function move(point) { if (active) active.grabbable.onMove(point); }
-  function release() {
+  function release(cancelled = false, point = null) {
     if (!active) return;
     const { grabbable } = active;
     active = null;
     stage.classList.remove('is-grabbing');
-    grabbable.onRelease();
+    if (point && !cancelled) grabbable.onMove(point);
+    grabbable.onRelease({ cancelled });
   }
 
   // ---------- mouse / touch / pen ----------
@@ -74,7 +75,11 @@ export function createPointerHub(stage, scheduleFrame = requestAnimationFrame) {
       stage.classList.toggle('can-grab', !isPaused() && grabbables.some((g) => g.hitTest(point)));
     }
   });
-  const endPointer = (e) => { if (active && active.pointerId === e.pointerId) release(); };
+  const endPointer = (e) => {
+    if (active && active.pointerId === e.pointerId) {
+      release(e.type === 'pointercancel', toStagePoint(e.clientX, e.clientY));
+    }
+  };
   stage.addEventListener('pointerup', endPointer);
   stage.addEventListener('pointercancel', endPointer);
 
@@ -89,7 +94,7 @@ export function createPointerHub(stage, scheduleFrame = requestAnimationFrame) {
   }
   function hideKeyboardCursor() {
     if (!cursor.visible) return;
-    if (cursor.pressed) { cursor.pressed = false; release(); }
+    if (cursor.pressed) { cursor.pressed = false; release(true); }
     arrowsDown.clear();
     cursor.visible = false;
     cursorEl.hidden = true;
@@ -129,7 +134,7 @@ export function createPointerHub(stage, scheduleFrame = requestAnimationFrame) {
     const dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     if (isPaused()) {
-      if (active) release();                    // pausing lets go of whatever is held
+      if (active) release(true);                // pausing cancels taps and lets go of held objects
       cursor.pressed = false;
     } else if (cursor.visible && arrowsDown.size) {
       cursor.heldFor += dt;

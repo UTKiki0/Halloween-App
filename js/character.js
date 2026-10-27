@@ -19,9 +19,8 @@
 // there is one place to change them. Positions here are in "stage units" (percent of stage width).
 
 import { createSpeech } from './speech.js';
-
-// The Story 1 text hint, spoken now and then until the story has been played.
-const SPEECH_LINE = 'I really want a vampire outfit for Halloween';
+import { createCoffinStory, COFFIN_HINT } from './stories/coffin.js';
+import { createPumpkinStory, PUMPKIN_HINT } from './stories/pumpkin.js';
 
 const FRAME_COUNT = 8;        // frames per strip (assets/art/char-*.png)
 const WALK_FPS = 8;
@@ -37,50 +36,7 @@ const GRAVITY = 420;          // stage units per second squared
 const BOUNCE = 0.3;           // fraction of speed kept after hitting the ground (0 = no bounce)
 const BOUNCE_MIN_SPEED = 40;  // slower impacts just land
 
-// ---------- Story 1: the vampire coffin ----------
-// Coffin geometry in stage units, measured from assets/art/fg-scene.png (scene drawn at 94% width,
-// 0.0999 stage units per art pixel): the whole coffin spans about x 4-34, y 110-150.
-const COFFIN = {
-  zone: { left: 4, right: 34, top: 108, bottom: 151 },   // release the pointer inside this to start the story
-  hideX: 19,       // where the character's head center ends up, inside the coffin
-  hideFistY: 122,  // where its raised fist ends up (the figure hangs below it and shrinks around it, so
-                   // the whole body is behind the coffin: at 0.55 scale it spans about y 122-144)
-  exitX: 44,       // where the vampire lands after leaping out
-};
-const STORY = {
-  drop: 0.9,            // seconds: drops into the coffin and shrinks
-  rattle: 3.9,          // seconds: the coffin rattles, glows, and mist rises (audio goes here later); whole story is about 6s
-  hiddenScale: 0.55,    // size while inside the coffin
-  leap: 150,            // upward speed of the vampire's leap out (stage units per second)
-  grow: 0.35,           // seconds for the vampire to grow back to full size
-  dupHold: 0.35,        // seconds after the leap before the coffin copy starts to fade away
-  tail: 3.0,            // seconds after the leap that effects are still running
-};
-STORY.emergeAt = STORY.drop + STORY.rattle;   // story clock time of the flash and the leap
-
-// Sound cues on the story clock (seconds from release). Sounds are in js/audio.js; trim points
-// were chosen from loudness measurements of each file (see research.md).
-//   whoosh  - the shrink into the coffin
-//   scratch - something restless inside; quiet source (peak -18 dBFS), so boosted; builds to a peak
-//             just before the flash when played from 0.5 s
-//   drone   - rises under the glow (the file itself rises from -33 dB)
-//   knock   - wooden knocks that speed up and get louder with the rattle (time, gain, pitch)
-//   puff / laugh / cape - the flash, the vampire's laugh (silent until 0.5 s in the file), the cape swoop
-const KNOCKS = [[1.3, 0.35, 0.95], [2.2, 0.4, 1.05], [2.9, 0.5, 0.92], [3.4, 0.55, 1.1], [3.8, 0.65, 1.0],
-  [4.1, 0.75, 1.08], [4.35, 0.85, 0.94], [4.55, 0.9, 1.12], [4.7, 1.0, 1.0]];
-const CUES = [
-  { t: 0, sound: 'whoosh', gain: 0.8 },
-  { t: STORY.drop, sound: 'scratch', offset: 0.5, duration: 3.9, gain: 3.5, fadeIn: 0.25, fadeOut: 0.4 },
-  { t: STORY.drop, sound: 'drone', offset: 0.5, duration: 5.5, gain: 0.55, fadeIn: 0.8, fadeOut: 1.2 },
-  ...KNOCKS.map(([t, gain, rate]) => ({ t, sound: 'knock', gain, rate })),
-  { t: STORY.emergeAt, sound: 'puff', gain: 0.9 },
-  { t: STORY.emergeAt + 0.05, sound: 'laugh', offset: 0.55, duration: 2.2, gain: 0.6, fadeOut: 0.4 },
-  { t: STORY.emergeAt + 0.1, sound: 'cape', offset: 2.9, duration: 1.3, gain: 0.7, fadeIn: 0.05, fadeOut: 0.3 },
-].sort((a, b) => a.t - b.t);
-
 const random = (min, max) => min + Math.random() * (max - min);
-const lerp = (a, b, t) => a + (b - a) * t;
-const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
 // options.audio: sound player from js/audio.js (optional; without it the story is silent).
 // options.scheduleFrame: defaults to requestAnimationFrame; tests pass a timer-based stand-in.
@@ -90,7 +46,9 @@ export function startCharacter(stage, hub, options = {}) {
   if (!el) return null;
 
   // Warm the cache so swapping sprite sheets never flashes.
-  ['walk', 'idle', 'hang', 'vamp-walk', 'vamp-idle', 'vamp-hang'].forEach((name) => { new Image().src = `assets/art/char-${name}.png`; });
+  ['walk', 'idle', 'hang', 'vamp-walk', 'vamp-idle', 'vamp-hang',
+    'vamp-basket-walk', 'vamp-basket-idle', 'vamp-basket-hang']
+    .forEach((name) => { new Image().src = `assets/art/char-${name}.png`; });
 
   // ---------- geometry (from CSS and the live layout) ----------
   const css = getComputedStyle(el);
@@ -109,21 +67,13 @@ export function startCharacter(stage, hub, options = {}) {
   // Where the box bottom sits when standing (measured once, with no lift applied).
   const groundBottom = ((el.getBoundingClientRect().bottom - stage.getBoundingClientRect().top) / stageWidthPx()) * 100;
   const standingBoxHeight = boxHeight();
-  const speech = createSpeech(stage, SPEECH_LINE);
+  const speech = createSpeech(stage, COFFIN_HINT);
 
-  // Box lift that puts the raised fist at COFFIN.hideFistY (the box top is holdY of the box height above the fist).
-  const liftInCoffin = groundBottom - (COFFIN.hideFistY - holdY * boxHeight() + boxHeight());
   // While going into or coming out of the coffin the figure scales around its fist, not its feet.
   const fistOrigin = `${(0.5 + holdX) * 100}% ${holdY * 100}%`;
 
   const groundBounds = () => [boxWidth * extentGround, 100 - boxWidth * extentGround];
   const airBounds = () => [boxWidth * extentAirLeft, 100 - boxWidth * extentAirRight];
-
-  // ---------- Story 1 effect layers ----------
-  const coffinCopy = document.getElementById('coffin-dup');
-  const glow = document.querySelector('.coffin-glow');
-  const puffs = [...document.querySelectorAll('.coffin-fx .puff')];
-  const flash = document.querySelector('.coffin-flash');
 
   const state = {
     mode: 'idle',
@@ -139,14 +89,7 @@ export function startCharacter(stage, hub, options = {}) {
     idleLeft: random(...IDLE_SECONDS),
     held: { x: 32, lift: 0 }, // where the pointer wants the character while held
     lastPoint: { x: 0, y: 0 },// last pointer position while held (decides whether the drop was over the coffin)
-    story: newStory(),
   };
-  // phase: null (not started) | 'enter' | 'rattle' | 'emerge' | 'done'
-  // nextCue: index of the next sound cue to fire (see CUES)
-  function newStory() {
-    return { phase: null, clock: 0, started: false, done: false, from: { x: 0, lift: 0 }, leapTime: 0, nextCue: 0 };
-  }
-
   function setMode(mode) {
     state.mode = mode;
     state.modeTime = 0;
@@ -154,14 +97,11 @@ export function startCharacter(stage, hub, options = {}) {
     el.classList.toggle('is-hanging', mode === 'held' || mode === 'fall' || mode === 'enter' || mode === 'inside');
   }
 
-  const storyBlocksGrab = () => ['enter', 'rattle', 'emerge'].includes(state.story.phase);
-  function setStoryPhase(phase) {
-    state.story.phase = phase;
-    el.dataset.phase = phase || '';
-    stage.dataset.story = phase === 'done' ? 'done' : phase ? 'playing' : '';
-    // The coffin's hint glow shows only while the story is waiting to be played (it returns after a reset).
-    stage.classList.toggle('story-spent', phase !== null);
-  }
+  const story = createCoffinStory({ stage, el, state, setMode, audio, speech,
+    stageWidthPx, groundBottom, boxHeight, holdY, gravity: GRAVITY });
+  const pumpkin = createPumpkinStory({ stage, el, state, hub, setMode, audio, speech,
+    unlocked: () => story.done, groundBounds });
+  let hintStory = 'coffin';
 
   // ---------- grabbing ----------
   // Turn a pointer point (the fist) into where the box should be.
@@ -174,13 +114,10 @@ export function startCharacter(stage, hub, options = {}) {
     state.held.lift = Math.min(groundBottom - height, Math.max(0, groundBottom - (boxTop + height)));
   }
 
-  const overCoffin = (p) => p.x >= COFFIN.zone.left && p.x <= COFFIN.zone.right
-    && p.y >= COFFIN.zone.top && p.y <= COFFIN.zone.bottom;
-
   hub.addGrabbable({
     // Body area: central part of the box. Standing, skip the empty space above the head.
     hitTest(point) {
-      if (storyBlocksGrab() || state.mode === 'enter' || state.mode === 'inside') return false;
+      if (story.blocksInteraction || pumpkin.blocksInteraction || state.mode === 'enter' || state.mode === 'inside') return false;
       const r = el.getBoundingClientRect();
       const s = stage.getBoundingClientRect();
       const left = ((r.left - s.left) / s.width) * 100;
@@ -198,9 +135,9 @@ export function startCharacter(stage, hub, options = {}) {
       setMode('held');
     },
     onMove: setHeldTarget,
-    onRelease() {
-      if (!state.story.done && !state.story.started && overCoffin(state.lastPoint)) {
-        startStory();
+    onRelease({ cancelled = false } = {}) {
+      if (!cancelled && story.canTrigger(state.lastPoint)) {
+        story.start();
       } else {
         state.vy = 0;
         state.vx = 0;
@@ -208,115 +145,6 @@ export function startCharacter(stage, hub, options = {}) {
       }
     },
   });
-
-  // ---------- Story 1 ----------
-  function startStory() {
-    const story = state.story;
-    story.started = true;
-    story.clock = 0;
-    story.from = { x: state.x, lift: state.lift };
-    setStoryPhase('enter');
-    setMode('enter');
-  }
-
-  function startLeap() {
-    // The vampire bursts out of the coffin: swap form, then leap up and over to the right.
-    el.classList.add('is-vamp');
-    state.x = COFFIN.hideX;
-    state.lift = liftInCoffin;
-    state.opacity = 1;
-    state.facing = 1;
-    state.vy = -STORY.leap;
-    // Time in the air until it lands, so it lands exactly on exitX.
-    const airTime = (STORY.leap + Math.sqrt(STORY.leap ** 2 + 2 * GRAVITY * liftInCoffin)) / GRAVITY;
-    state.vx = (COFFIN.exitX - COFFIN.hideX) / airTime;
-    state.story.leapTime = 0;
-    setStoryPhase('emerge');
-    setMode('fall');
-  }
-
-  function updateStory(dt) {
-    const story = state.story;
-    if (!story.started) return;
-    if (story.clock < STORY.emergeAt + STORY.tail) story.clock += dt;   // effects keep timing after the leap
-
-    // Fire sound cues as the story clock passes them. The clock only runs while playing, and pausing
-    // suspends the audio context, so sound and picture stay together.
-    while (story.nextCue < CUES.length && story.clock >= CUES[story.nextCue].t) {
-      const { t, sound, ...settings } = CUES[story.nextCue];
-      if (audio) audio.play(sound, settings);
-      story.nextCue += 1;
-    }
-
-    if (state.mode === 'enter') {
-      const p = clamp01(story.clock / STORY.drop);
-      const eased = 1 - (1 - p) ** 2;                       // slows into the coffin
-      state.x = lerp(story.from.x, COFFIN.hideX, eased);
-      state.lift = lerp(story.from.lift, liftInCoffin, p * p);   // speeds up like a drop
-      state.scale = lerp(1, STORY.hiddenScale, p);
-      state.opacity = p < 0.45 ? 1 : 1 - (p - 0.45) / 0.55; // shrinks and fades into the coffin, fully gone at the end
-      if (p >= 1) { setStoryPhase('rattle'); setMode('inside'); }
-    } else if (state.mode === 'inside') {
-      state.opacity = 0;
-      if (story.clock >= STORY.emergeAt) startLeap();
-    }
-    if (story.phase === 'emerge') {
-      story.leapTime += dt;
-      state.scale = lerp(STORY.hiddenScale, 1, clamp01(story.leapTime / STORY.grow));
-    }
-  }
-
-  // Effects are a pure function of the story clock, so pausing freezes them exactly.
-  function renderStory() {
-    if (!coffinCopy || !glow || !flash) return;   // a page without the coffin layers just skips the effects
-    const story = state.story;
-    const c = story.clock;
-    const w = clamp01((c - STORY.drop) / STORY.rattle);          // 0..1 across the rattle
-    const px = (units) => (units / 100) * stageWidthPx();
-    const rattling = story.started && c >= STORY.drop && c < STORY.emergeAt;
-
-    // The coffin copy appears once the character has gone into the coffin (nothing pops), stays in front
-    // while the vampire bursts out, then fades away.
-    const fadeStart = STORY.emergeAt + STORY.dupHold;
-    coffinCopy.style.opacity = !story.started || c < STORY.drop ? 0
-      : c < fadeStart ? 1 : Math.max(0, 1 - (c - fadeStart) / 0.25);
-    const amplitude = 0.5 + 1.6 * w;                              // degrees, growing
-    coffinCopy.style.rotate = rattling ? `${amplitude * Math.sin(c * 2 * Math.PI * 11)}deg` : '0deg';
-    coffinCopy.style.translate = rattling ? `${px(0.2 * amplitude * Math.sin(c * 2 * Math.PI * 17 + 1))}px 0` : '0 0';
-
-    let glowLevel = 0;
-    if (story.started && c >= STORY.drop) {
-      glowLevel = c < STORY.emergeAt ? 0.15 + 0.85 * w : Math.max(0, 1 - (c - STORY.emergeAt) / 0.9);
-    }
-    glow.style.opacity = glowLevel * (0.8 + 0.2 * Math.sin(c * 2 * Math.PI * 1.8));
-
-    puffs.forEach((puff, i) => {
-      const age = c - (STORY.drop + 0.25 + i * 0.5);
-      const life = 1.7;
-      if (!story.started || age < 0 || age > life) { puff.style.opacity = 0; return; }
-      const q = age / life;
-      const side = i % 2 === 0 ? 1 : -1;
-      puff.style.opacity = 0.7 * Math.sin(Math.PI * q);
-      puff.style.translate = `${px(side * (2 + 6 * q) + (i - 2.5))}px ${px(-(8 + 20 * q))}px`;
-      puff.style.scale = `${0.4 + 1.3 * q}`;
-    });
-
-    const flashAge = c - STORY.emergeAt;
-    flash.style.opacity = !story.started || flashAge < 0 ? 0
-      : flashAge < 0.1 ? flashAge / 0.1 : Math.max(0, 1 - (flashAge - 0.1) / 0.6);
-  }
-
-  // Restore the original character and re-arm Story 1 (for when all the stories are finished).
-  function resetStory() {
-    el.classList.remove('is-vamp');
-    state.story = newStory();
-    state.scale = 1;
-    state.opacity = 1;
-    setStoryPhase(null);
-    speech.reset();   // the hint starts over with the rest of the cycle
-    if (state.mode === 'enter' || state.mode === 'inside') { state.lift = 0; setMode('idle'); }
-    renderStory();
-  }
 
   // ---------- behavior ----------
   function chooseTarget() {
@@ -331,7 +159,8 @@ export function startCharacter(stage, hub, options = {}) {
   function update(dt) {
     state.modeTime += dt;
     const follow = 1 - Math.exp(-FOLLOW_RATE * dt);
-    updateStory(dt);
+    story.update(dt);
+    pumpkin.update(dt);
 
     if (state.mode === 'idle') {
       state.idleLeft -= dt;
@@ -373,8 +202,7 @@ export function startCharacter(stage, hub, options = {}) {
           state.vx = 0;
           state.scale = 1;
           state.idleLeft = random(...IDLE_SECONDS);
-          if (state.story.phase === 'emerge') setStoryPhase('done');   // Story 1 is over
-          state.story.done = state.story.done || state.story.phase === 'done';
+          story.onLand();
           setMode('idle');
         }
       }
@@ -384,23 +212,30 @@ export function startCharacter(stage, hub, options = {}) {
       state.x = Math.min(maxX, Math.max(minX, state.x));
     }
     // The text hint: it speaks only while standing or walking, and only until the story has been played.
-    speech.update(dt, (state.mode === 'idle' || state.mode === 'walk') && !state.story.started);
+    const nextHint = story.done ? 'pumpkin' : 'coffin';
+    if (hintStory !== nextHint) {
+      hintStory = nextHint;
+      speech.setLine(nextHint === 'pumpkin' ? PUMPKIN_HINT : COFFIN_HINT);
+    }
+    speech.update(dt, (state.mode === 'idle' || state.mode === 'walk')
+      && (story.done ? !pumpkin.started : !story.started));
   }
 
   function render() {
-    const fps = { walk: WALK_FPS, idle: IDLE_FPS, held: HANG_FPS, fall: HANG_FPS, enter: HANG_FPS, inside: HANG_FPS }[state.mode];
+    const fps = { walk: WALK_FPS, idle: IDLE_FPS, held: HANG_FPS, fall: HANG_FPS, enter: HANG_FPS, inside: HANG_FPS, pickup: WALK_FPS }[state.mode];
     const frame = Math.floor(state.modeTime * fps) % FRAME_COUNT;
     el.style.left = `${state.x}%`;
     // Lift is in stage-width units, so convert to pixels for the vertical translate.
     el.style.translate = `-50% ${-(state.lift / 100) * stageWidthPx()}px`;
     // Mirror around the head-centered box. Shrinking is around the feet normally (CSS default origin: bottom
     // center) and around the fist while in or leaving the coffin.
-    const aroundFist = state.mode === 'enter' || state.mode === 'inside' || (state.story.phase === 'emerge' && state.scale < 1);
+    const aroundFist = state.mode === 'enter' || state.mode === 'inside' || (story.phase === 'emerge' && state.scale < 1);
     el.style.transformOrigin = aroundFist ? fistOrigin : '';
     el.style.scale = `${state.facing * state.scale} ${state.scale}`;
     el.style.opacity = state.opacity;
     el.style.backgroundPositionX = `${(frame / (FRAME_COUNT - 1)) * 100}%`;
-    renderStory();
+    story.render();
+    pumpkin.render();
     // Top of the standing head, for the speech bubble (the bubble is only shown while standing or walking).
     speech.render(state.x, groundBottom - state.lift - standingBoxHeight * figureHeight);
   }
@@ -415,5 +250,12 @@ export function startCharacter(stage, hub, options = {}) {
   }
   scheduleFrame(loop);
 
-  return { resetStory };
+  return { resetStory() {
+    pumpkin.reset();
+    state.lift = state.vx = state.vy = 0;
+    setMode('idle');
+    story.reset();
+    hintStory = 'coffin';
+    speech.setLine(COFFIN_HINT);
+  } };
 }

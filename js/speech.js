@@ -18,7 +18,7 @@ const random = (min, max) => min + Math.random() * (max - min);
 
 export function createSpeech(stage, line) {
   const root = document.getElementById('speech');
-  if (!root) return { update() {}, render() {}, reset() {} };
+  if (!root) return { update() {}, render() {}, reset() {}, setLine() {} };
   const bubble = root.querySelector('.speech-bubble');
   const text = root.querySelector('.speech-text');
   const live = document.getElementById('speech-live');   // screen-reader copy of the line
@@ -76,5 +76,9 @@ export function createSpeech(stage, line) {
     state.wait = FIRST_DELAY;
   }
 
-  return { update, render, reset };
+  function setLine(nextLine) {
+    line = nextLine;
+    reset();
+  }
+  return { update, render, reset, setLine };
 }
